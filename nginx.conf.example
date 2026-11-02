@@ -1,0 +1,60 @@
+# 云盘 · 宝塔面板 / 原生 Nginx 配置片段
+# 把 location 段落粘贴到站点的 server { } 内，然后重载 Nginx
+
+server {
+    listen 80;
+    server_name pan.example.com;
+    root /www/wwwroot/pan;
+    index index.php;
+
+    # 上传体积与超时（网盘必需）
+    client_max_body_size 512m;
+    client_body_timeout 300s;
+    fastcgi_read_timeout 3600s;
+    fastcgi_send_timeout 3600s;
+    fastcgi_buffering off;
+
+    # ---- 敏感目录：绝对禁止直连 ----
+    # 注意：.htaccess 对 Nginx 完全无效，以下三段是必需的
+    location ^~ /storage/ {
+        deny all;
+        return 403;
+    }
+    location ^~ /data/ {
+        deny all;
+        return 403;
+    }
+    location ^~ /runtime/ {
+        deny all;
+        return 403;
+    }
+
+    # ---- 伪静态 ----
+    location / {
+        try_files $uri $uri/ /index.php$is_args$args;
+    }
+
+    # ---- PHP ----
+    location ~ \.php$ {
+        fastcgi_pass unix:/tmp/php-cgi-81.sock;   # 按实际 PHP 版本调整
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    # ---- 静态资源缓存 ----
+    location ~* \.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff2?)$ {
+        expires 7d;
+        access_log off;
+        add_header Cache-Control "public";
+    }
+
+    # ---- 安全头 ----
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    # ---- 大文件下载：关闭 gzip，避免边压边传导致内存暴涨 ----
+    gzip off;
+}

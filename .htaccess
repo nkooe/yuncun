@@ -1,0 +1,48 @@
+# 微信网盘 · Apache 伪静态规则
+# 适用于启用了 mod_rewrite 的 Apache 2.4+ / 宝塔
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 已存在的文件与目录直接返回
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 其余全部交给入口
+  RewriteRule ^ index.php [L]
+</IfModule>
+
+# 禁止访问敏感目录（.htaccess 只在 Apache 下有效）
+<IfModule mod_authz_core.c>
+  <FilesMatch "^(config\.php|install\.lock)$">
+    Require all denied
+  </FilesMatch>
+</IfModule>
+
+# 压缩静态资源
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# 静态资源缓存
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+</IfModule>
+
+# 限制上传体积（与 php.ini 协同，实际以 PHP 为准）
+<IfModule mod_php.c>
+  php_value upload_max_filesize 512M
+  php_value post_max_size 512M
+  php_value max_execution_time 0
+</IfModule>
+
+# 安全响应头
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
