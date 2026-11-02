@@ -82,25 +82,9 @@ class DownloadController
     }
 
     /** 物理定位：优先按 sha256，兼容旧数据用 storage_key */
-    private function resolvePath(array $file): string
-    {
-        $sha = (string) ($file['sha256'] ?? '');
-        if ($sha !== '' && Storage::exists($sha)) {
-            return Storage::absPath($sha);
-        }
-        $key = (string) ($file['storage_key'] ?? '');
-        if ($key !== '') {
-            $p = STORAGE_PATH . '/files/' . ltrim(str_replace('..', '', $key), '/');
-            if (is_file($p)) {
-                return $p;
-            }
-        }
-        return '';
-    }
-
     private function stream(array $file, int $dlId, bool $isAdmin): never
     {
-        $path = $this->resolvePath($file);
+        $path = Storage::resolveFilePath($file);
         if ($path === '') {
             $this->deny('文件实体缺失，请联系管理员', 410);
         }

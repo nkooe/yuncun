@@ -222,10 +222,6 @@ class AdminFolderController
 
     private function respond(bool $ok, string $msg, array $extra = []): never
     {
-        if (Auth::wantsJson()) {
-            json_out(['ok' => $ok, 'msg' => $msg] + $extra, $ok ? 200 : 400);
-        }
-        flash($ok ? 'success' : 'error', $msg);
-        redirect('/admin/folders');
+        admin_respond($ok, $msg, '/admin/folders', $extra);
     }
 }

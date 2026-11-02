@@ -72,7 +72,7 @@ class ShareController
             $this->renderError('该分享的下载次数已用完');
         }
 
-        $path = $this->resolvePath($file);
+        $path = Storage::resolveFilePath($file);
         if ($path === '') {
             $this->renderError('文件实体缺失，请联系分享者');
         }
@@ -168,22 +168,6 @@ class ShareController
         $at = (int) ($_SESSION['_share_ok'][$token] ?? 0);
         // 验证有效期 2 小时
         return $at > 0 && (time() - $at) < 7200;
-    }
-
-    private function resolvePath(array $file): string
-    {
-        $sha = (string) ($file['sha256'] ?? '');
-        if ($sha !== '' && Storage::exists($sha)) {
-            return Storage::absPath($sha);
-        }
-        $key = (string) ($file['storage_key'] ?? '');
-        if ($key !== '') {
-            $p = STORAGE_PATH . '/files/' . ltrim(str_replace('..', '', $key), '/');
-            if (is_file($p)) {
-                return $p;
-            }
-        }
-        return '';
     }
 
     private function renderError(string $msg): never

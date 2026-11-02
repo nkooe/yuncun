@@ -128,7 +128,7 @@ class AdminFileController
         }
 
         Db::update('files', $data, '`id` = ?', [$id]);
-        self::audit('update_file', $id, '更新文件 #' . $id);
+        admin_audit('update_file', 'file', $id, '更新文件 #' . $id);
 
         flash('success', '已保存');
         redirect('/admin/files' . $this->backQuery());
@@ -150,12 +150,12 @@ class AdminFileController
 
         if ($hard) {
             $purged = $this->purge(['id' => $id]);
-            self::audit('purge_file', $id, '永久删除：' . $file['name']);
+            admin_audit('purge_file', 'file', $id, '永久删除：' . $file['name']);
             $this->respond(true, '已永久删除', ['purged' => $purged]);
         }
 
         Db::update('files', ['deleted_at' => now(), 'updated_at' => now()], '`id` = ?', [$id]);
-        self::audit('delete_file', $id, '移入回收站：' . $file['name']);
+        admin_audit('delete_file', 'file', $id, '移入回收站：' . $file['name']);
 
         $this->respond(true, '已移入回收站', ['id' => $id]);
     }
@@ -176,7 +176,7 @@ class AdminFileController
 
         if ($hard) {
             $purged = $this->purge(['ids' => $ids]);
-            self::audit('batch_purge_files', 0, "批量永久删除 {$purged} 个");
+            admin_audit('batch_purge_files', 'file', 0, "批量永久删除 {$purged} 个");
             $this->respond(true, "已永久删除 {$purged} 个", ['count' => $purged]);
         }
 
@@ -184,7 +184,7 @@ class AdminFileController
             'UPDATE ' . Db::t('files') . " SET `deleted_at` = ?, `updated_at` = ? WHERE `id` IN ({$in}) AND `deleted_at` IS NULL",
             array_merge([now(), now()], $ids)
         );
-        self::audit('batch_delete_files', 0, "批量移入回收站 {$n} 个");
+        admin_audit('batch_delete_files', 'file', 0, "批量移入回收站 {$n} 个");
 
         $this->respond(true, "已移入回收站 {$n} 个", ['count' => $n]);
     }
@@ -257,29 +257,8 @@ class AdminFileController
         return $parts ? '?' . implode('&', $parts) : '';
     }
 
-    /** 前端用 fetch 调用的接口返回 JSON，表单提交则跳回列表 */
     private function respond(bool $ok, string $msg, array $extra = []): never
     {
-        if (Auth::wantsJson()) {
-            json_out(['ok' => $ok, 'msg' => $msg] + $extra, $ok ? 200 : 400);
-        }
-        flash($ok ? 'success' : 'error', $msg);
-        redirect('/admin/files');
-    }
-
-    private static function audit(string $action, int $targetId, string $detail): void
-    {
-        try {
-            Db::insert('admin_logs', [
-                'admin_id'    => Auth::id(),
-                'action'      => $action,
-                'target_type' => 'file',
-                'target_id'   => $targetId,
-                'detail'      => mb_substr($detail, 0, 500),
-                'ip'          => client_ip(),
-                'created_at'  => now(),
-            ]);
-        } catch (Throwable) {
-        }
+        admin_respond($ok, $msg, '/admin/files', $extra);
     }
 }

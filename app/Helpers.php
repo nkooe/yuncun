@@ -313,6 +313,20 @@ function mime_for_ext(string $ext): string
  * @param int    $targetId   对象 id
  * @param string $detail     人类可读描述
  */
+/**
+ * 后台写操作统一返回：fetch 请求返回 JSON，表单提交则 flash + 跳回列表。
+ *
+ * @param string $back 表单提交时跳回的列表页路径
+ */
+function admin_respond(bool $ok, string $msg, string $back, array $extra = []): never
+{
+    if (Auth::wantsJson()) {
+        json_out(['ok' => $ok, 'msg' => $msg] + $extra, $ok ? 200 : 400);
+    }
+    flash($ok ? 'success' : 'error', $msg);
+    redirect($back);
+}
+
 function admin_audit(string $action, string $targetType, int $targetId, string $detail): void
 {
     try {
@@ -440,44 +454,7 @@ function can_access_level(int $needLevelId, ?array $user = null): bool
 // 下载配额
 // ==========================================================================
 
-/**
- * 读取配额状态，必要时按周期懒重置。
- * @return array{unlimited:bool,quota:int,used:int,left:int,period:string,reset_at:?string,percent:int}
- */
-function quota_state(array $user): array
-{
-    $uid     = (int) $user['id'];
-    $period  = (string) ($user['quota_period'] ?? 'total');
-    $quota   = (int) ($user['download_quota'] ?? 0);
-    $used    = (int) ($user['download_used'] ?? 0);
-    $resetAt = $user['quota_reset_at'] ?? null;
 
-    if ($period !== 'total') {
-        $needReset = empty($resetAt) || strtotime((string) $resetAt) <= time();
-        if ($needReset) {
-            $next = $period === 'daily'
-                ? strtotime('tomorrow 00:00:00')
-                : strtotime('first day of next month 00:00:00');
-            Db::update('users', [
-                'download_used'  => 0,
-                'quota_reset_at' => date('Y-m-d H:i:s', $next),
-                'updated_at'     => now(),
-            ], '`id` = ?', [$uid]);
-            $used = 0;
-            $resetAt = date('Y-m-d H:i:s', $next);
-        }
-    }
-
-    return [
-        'unlimited' => $quota === 0,
-        'quota'     => $quota,
-        'used'      => $used,
-        'left'      => $quota === 0 ? -1 : max(0, $quota - $used),
-        'period'    => $period,
-        'reset_at'  => $resetAt,
-        'percent'   => $quota === 0 ? 0 : min(100, (int) round($used / max(1, $quota) * 100)),
-    ];
-}
 
 /**
  * 扣减一次下载配额。必须先扣再输出，防止并发绕过。

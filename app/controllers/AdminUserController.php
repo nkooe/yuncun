@@ -90,33 +90,13 @@ class AdminUserController
         }
 
         Db::update('users', $data, '`id` = ?', [$id]);
-        $this->audit($id, '更新用户：' . $u['username']);
+        admin_audit('update_user', 'user', $id, '更新用户：' . $u['username']);
 
         $this->respond(true, '已保存');
     }
 
-    private function audit(int $targetId, string $detail): void
-    {
-        try {
-            Db::insert('admin_logs', [
-                'admin_id'    => Auth::id(),
-                'action'      => 'update_user',
-                'target_type' => 'user',
-                'target_id'   => $targetId,
-                'detail'      => mb_substr($detail, 0, 500),
-                'ip'          => client_ip(),
-                'created_at'  => now(),
-            ]);
-        } catch (Throwable) {
-        }
-    }
-
     private function respond(bool $ok, string $msg): never
     {
-        if (Auth::wantsJson()) {
-            json_out(['ok' => $ok, 'msg' => $msg], $ok ? 200 : 400);
-        }
-        flash($ok ? 'success' : 'error', $msg);
-        redirect('/admin/users');
+        admin_respond($ok, $msg, '/admin/users');
     }
 }

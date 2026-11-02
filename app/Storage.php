@@ -393,4 +393,24 @@ class Storage
 
         return ['sent' => $sent, 'aborted' => connection_aborted() === 1, 'size' => $size];
     }
+
+    /**
+     * 把文件记录解析为磁盘绝对路径；实体缺失返回空串。
+     * 优先按 sha256 定位（内容寻址），退回到 storage_key 的传统路径。
+     */
+    public static function resolveFilePath(array $file): string
+    {
+        $sha = (string) ($file['sha256'] ?? '');
+        if ($sha !== '' && self::exists($sha)) {
+            return self::absPath($sha);
+        }
+        $key = (string) ($file['storage_key'] ?? '');
+        if ($key !== '') {
+            $p = STORAGE_PATH . '/files/' . ltrim(str_replace('..', '', $key), '/');
+            if (is_file($p)) {
+                return $p;
+            }
+        }
+        return '';
+    }
 }

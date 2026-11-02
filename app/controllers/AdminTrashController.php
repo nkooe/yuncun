@@ -171,7 +171,7 @@ class AdminTrashController
         $purged = $fileIds ? AdminFileController::purge(['ids' => $fileIds]) : 0;
         $folders = Db::exec('DELETE FROM ' . Db::t('folders') . ' WHERE `deleted_at` IS NOT NULL');
 
-        $this->audit('empty_trash', 0, "清空回收站：{$purged} 文件 / {$folders} 文件夹");
+        admin_audit('empty_trash', 'trash', 0, "清空回收站：{$purged} 文件 / {$folders} 文件夹");
         $this->respond(true, "回收站已清空（{$purged} 个文件）");
     }
 
@@ -206,28 +206,8 @@ class AdminTrashController
         return array_values(array_filter(array_map('intval', $ids), static fn($v) => $v > 0));
     }
 
-    private function audit(string $action, int $targetId, string $detail): void
-    {
-        try {
-            Db::insert('admin_logs', [
-                'admin_id'    => Auth::id(),
-                'action'      => $action,
-                'target_type' => 'trash',
-                'target_id'   => $targetId,
-                'detail'      => mb_substr($detail, 0, 500),
-                'ip'          => client_ip(),
-                'created_at'  => now(),
-            ]);
-        } catch (Throwable) {
-        }
-    }
-
     private function respond(bool $ok, string $msg, array $extra = []): never
     {
-        if (Auth::wantsJson()) {
-            json_out(['ok' => $ok, 'msg' => $msg] + $extra, $ok ? 200 : 400);
-        }
-        flash($ok ? 'success' : 'error', $msg);
-        redirect('/admin/trash');
+        admin_respond($ok, $msg, '/admin/trash', $extra);
     }
 }

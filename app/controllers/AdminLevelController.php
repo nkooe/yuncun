@@ -136,10 +136,6 @@ class AdminLevelController
 
     private function respond(bool $ok, string $msg): never
     {
-        if (Auth::wantsJson()) {
-            json_out(['ok' => $ok, 'msg' => $msg], $ok ? 200 : 400);
-        }
-        flash($ok ? 'success' : 'error', $msg);
-        redirect('/admin/levels');
+        admin_respond($ok, $msg, '/admin/levels');
     }
 }

@@ -2831,66 +2831,6 @@ img, svg { display: block; }
    后台表格：移动端转卡片（< 768px）
    窄屏下多列表格无法阅读，改为每行一张卡片，label 与值左右分布
    ========================================================================== */
-@media (max-width: 767px) {
-
-  .adm-table {
-    table-layout: auto;
-    min-width: 0;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-  .adm-table thead { display: none; }
-  .adm-table tbody { display: block; }
-  .adm-table tr {
-    display: block;
-    background: #fff;
-    border: 1px solid #E8EBEF;
-    border-radius: 12px;
-    padding: 14px;
-    margin: 0 0 10px;
-  }
-  .adm-table tr:hover { background: #fff; }
-  .adm-table td {
-    display: block;
-    width: auto;
-    border: none;
-    padding: 0;
-    text-align: left !important;
-  }
-
-  /* 首列（含头像的那列）整块显示，不加 label */
-  .adm-table td[data-label="用户"] {
-    padding-bottom: 10px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid #F2F3F5;
-  }
-
-  /* 其余列：label 左、值右 */
-  .adm-table td[data-label]:not([data-label="用户"]) {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px;
-    padding: 7px 0;
-    font-size: 13px;
-    line-height: 1.4;
-  }
-  .adm-table td[data-label]:not([data-label="用户"])::before {
-    content: attr(data-label);
-    flex: 0 0 auto;
-    color: #86909C;
-    font-size: 12.5px;
-  }
-
-  /* 被 col-md 隐藏的列在卡片里恢复显示 */
-  .adm-table td.col-md { display: flex !important; }
-
-  /* 操作列贴右 */
-  .adm-table td[data-label="操作"] { justify-content: flex-end; padding-top: 10px; }
-
-  /* 表格外层不再横向滚动 */
-  .table-wrap { overflow-x: visible; }
-}
 
 /* ==========================================================================
    用户中心记录卡：手机端两行布局
@@ -3029,84 +2969,6 @@ img, svg { display: block; }
    移动端后台表格：恢复标准表格 + 横向滑动（不是卡片）
    覆盖此前误加的 card 模式
    ========================================================================== */
-@media (max-width: 767px) {
-
-  /* 表格外壳允许横向滚动 */
-  .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-x: contain;
-    padding-bottom: 2px;
-  }
-  /* 滚动条细一点 */
-  .table-wrap::-webkit-scrollbar { height: 5px; }
-  .table-wrap::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, .16);
-    border-radius: 3px;
-  }
-
-  /* 表格本体：强制正常表格布局，最小宽度保证不被压缩 */
-  .adm-table {
-    display: table;
-    table-layout: auto;
-    width: 100%;
-    min-width: 720px;
-    border-collapse: collapse;
-    border-spacing: 0;
-  }
-  .adm-table thead { display: table-header-group; }
-  .adm-table tbody { display: table-row-group; }
-  .adm-table tr {
-    display: table-row;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0;
-  }
-  .adm-table tr:hover { background: #FAFBFC; }
-  .adm-table th,
-  .adm-table td {
-    display: table-cell;
-    width: auto;
-    padding: 11px 10px;
-    border: none;
-    border-bottom: 1px solid #F2F3F5;
-    font-size: 12.5px;
-    vertical-align: middle;
-    text-align: left;
-  }
-  .adm-table th {
-    font-size: 12px;
-    color: #86909C;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-  .adm-table td[data-label]::before { content: none; }
-  .adm-table td[data-label="用户"] {
-    padding-bottom: 11px;
-    margin-bottom: 0;
-    border-bottom: 1px solid #F2F3F5;
-  }
-
-  /* 恢复 col-md 的隐藏策略，列太多时用滑动代替 */
-  .adm-table .col-md { display: table-cell; }
-
-  /* 长文本统一省略号 */
-  .adm-table td,
-  .adm-table td * {
-    max-width: 220px;
-  }
-  .adm-table td .fcell-main { max-width: 160px; }
-  .adm-table td .fcell-main .fname,
-  .adm-table td .fcell-main span {
-    display: block;
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
 
 /* ==========================================================================
    全局：长标题一律省略号，避免撑破或截断成一半
@@ -3127,20 +2989,20 @@ img, svg { display: block; }
 @media (max-width: 767px) {
 
   .adm-table {
-    display: table !important;
-    table-layout: auto !important;
-    width: 100% !important;
-    min-width: 720px !important;
+    display: table;
+    table-layout: auto;
+    width: 100%;
+    min-width: 720px;
   }
-  .adm-table thead { display: table-header-group !important; }
-  .adm-table tbody { display: table-row-group !important; }
+  .adm-table thead { display: table-header-group; }
+  .adm-table tbody { display: table-row-group; }
   .adm-table tr {
-    display: table-row !important;
-    background: transparent !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
+    display: table-row;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
   }
 
   .adm-table th,
@@ -3149,14 +3011,14 @@ img, svg { display: block; }
   .adm-table td[data-label]:not([data-label="用户"]),
   .adm-table td.col-md,
   .adm-table td.col-md[data-label] {
-    display: table-cell !important;
-    width: auto !important;
-    padding: 11px 10px !important;
-    border: 0 !important;
+    display: table-cell;
+    width: auto;
+    padding: 11px 10px;
+    border: 0;
     border-bottom: 1px solid #F2F3F5 !important;
-    font-size: 12.5px !important;
-    vertical-align: middle !important;
-    text-align: left !important;
+    font-size: 12.5px;
+    vertical-align: middle;
+    text-align: left;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3166,8 +3028,8 @@ img, svg { display: block; }
   /* 干掉卡片模式生成的 label 前缀 */
   .adm-table td[data-label]::before,
   .adm-table td[data-label]:not([data-label="用户"])::before {
-    content: none !important;
-    display: none !important;
+    content: none;
+    display: none;
   }
 
   /* 首列不再有卡片式的分割线 */
@@ -3193,6 +3055,6 @@ img, svg { display: block; }
   }
 
   /* 操作列图标不换行 */
-  .adm-table td.ta-r { text-align: right !important; }
+  .adm-table td.ta-r { text-align: right; }
   .adm-table td.ta-r .icon-btn { display: inline-flex; }
 }
