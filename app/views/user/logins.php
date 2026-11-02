@@ -27,7 +27,7 @@ $navTitle = '登录记录';
           <span class="log-dot <?= $lg['status'] === 'ok' ? 'ok' : ($lg['status'] === 'locked' ? 'warn' : 'bad') ?>"></span>
           <div class="log-main">
             <b><?= e($lg['msg']) ?></b>
-            <small class="mono"><?= e($lg['ip']) ?> · <?= e(mb_substr((string) $lg['ua'], 0, 32)) ?></small>
+            <small class="mono"><span class="log-ip"><?= e($lg['ip']) ?></span><span class="log-ua"> · <?= e(mb_substr((string) $lg['ua'], 0, 32)) ?></span></small>
           </div>
           <time><?= e(time_human((string) $lg['created_at'])) ?></time>
         </li>

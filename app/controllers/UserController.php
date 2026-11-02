@@ -18,6 +18,7 @@ class UserController
         $quota = $this->quotaView($u);
 
         // 统计
+        $createdAt = (string) ($u['created_at'] ?? '');
         $stats = [
             'downloads_total' => (int) Db::val(
                 'SELECT COUNT(*) FROM ' . Db::t('downloads') . ' WHERE `user_id` = ? AND `status` <> ?',
@@ -30,23 +31,41 @@ class UserController
             'login_count'     => (int) $u['login_count'],
             'last_login'      => (string) ($u['last_login_at'] ?? ''),
             'last_ip'         => (string) ($u['last_login_ip'] ?? ''),
-            'days'            => max(1, (int) ceil((time() - strtotime((string) $u['created_at'])) / 86400)),
+            'created_at'      => $createdAt !== '' ? date('Y-m-d H:i', strtotime($createdAt)) : '',
+            'days'            => max(1, (int) ceil((time() - strtotime($createdAt)) / 86400)),
         ];
 
-        // 最近下载
+        // 两条记录各自独立分页：dp = 下载页，lp = 登录页
+        $perPage = 10;
+
+        $dp = max(1, get_int('dp', 1));
+        $dTotal = (int) Db::val(
+            'SELECT COUNT(*) FROM ' . Db::t('downloads') . ' WHERE `user_id` = ?',
+            [$uid]
+        );
+        $dPager = paginate($dTotal, $dp, $perPage);
+
         $recentDownloads = Db::all(
             'SELECT d.`id`, d.`file_id`, d.`ip`, d.`bytes_sent`, d.`status`, d.`created_at`, '
             . 'f.`name` AS file_name, f.`ext` '
             . 'FROM ' . Db::t('downloads') . ' d '
             . 'LEFT JOIN ' . Db::t('files') . ' f ON f.`id` = d.`file_id` '
-            . 'WHERE d.`user_id` = ? ORDER BY d.`id` DESC LIMIT 8',
+            . 'WHERE d.`user_id` = ? ORDER BY d.`id` DESC '
+            . 'LIMIT ' . (int) $dPager['per_page'] . ' OFFSET ' . (int) $dPager['offset'],
             [$uid]
         );
 
-        // 最近登录
+        $lp = max(1, get_int('lp', 1));
+        $lTotal = (int) Db::val(
+            'SELECT COUNT(*) FROM ' . Db::t('login_logs') . ' WHERE `user_id` = ?',
+            [$uid]
+        );
+        $lPager = paginate($lTotal, $lp, $perPage);
+
         $recentLogins = Db::all(
             'SELECT `ip`, `ua`, `status`, `msg`, `created_at` FROM ' . Db::t('login_logs')
-            . ' WHERE `user_id` = ? ORDER BY `id` DESC LIMIT 8',
+            . ' WHERE `user_id` = ? ORDER BY `id` DESC '
+            . 'LIMIT ' . (int) $lPager['per_page'] . ' OFFSET ' . (int) $lPager['offset'],
             [$uid]
         );
 
@@ -57,6 +76,8 @@ class UserController
             'stats'           => $stats,
             'recentDownloads' => $recentDownloads,
             'recentLogins'    => $recentLogins,
+            'dPager'          => $dPager,
+            'lPager'          => $lPager,
         ], 'front');
     }
 

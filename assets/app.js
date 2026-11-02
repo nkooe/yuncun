@@ -142,3 +142,77 @@
     boot();
   }
 })();
+
+/* ==========================================================================
+   导航栏用户菜单
+   ========================================================================== */
+(function () {
+  var wrap = document.getElementById('navUser');
+  if (!wrap) return;
+
+  var btn = wrap.querySelector('.nav-user-btn');
+  var menu = wrap.querySelector('.nav-user-menu');
+  if (!btn || !menu) return;
+
+  function close() {
+    wrap.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+  function toggle(e) {
+    e.stopPropagation();
+    var open = wrap.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  btn.addEventListener('click', toggle);
+
+  // 点菜单外部关闭
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) close();
+  });
+
+  // Esc 关闭
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+
+  // 点菜单里的链接后关闭
+  menu.addEventListener('click', function (e) {
+    if (e.target.closest('a')) close();
+  });
+})();
+
+/* ==========================================================================
+   后台顶栏用户菜单
+   ========================================================================== */
+(function () {
+  var wrap = document.getElementById('admUserMenu');
+  if (!wrap) return;
+
+  var btn = wrap.querySelector('.adm-user-btn');
+  var menu = wrap.querySelector('.adm-user-dropdown');
+  if (!btn || !menu) return;
+
+  function close() {
+    wrap.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  }
+
+  btn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var open = wrap.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) close();
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+
+  menu.addEventListener('click', function (e) {
+    if (e.target.closest('a')) close();
+  });
+})();

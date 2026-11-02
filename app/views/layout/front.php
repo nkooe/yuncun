@@ -52,16 +52,8 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
 
       <nav class="pc-nav">
         <a class="<?= $tabActive(['/']) ?>" href="<?= url('/') ?>">全部资源</a>
+        <a class="<?= $tabActive(['/categories', '/folder']) ?>" href="<?= url('/categories') ?>">分类</a>
         <a class="<?= $tabActive(['/search']) ?>" href="<?= url('/search') ?>">搜索</a>
-        <?php if ($u): ?>
-          <a class="<?= $tabActive(['/user']) ?>" href="<?= url('/user') ?>">我的</a>
-          <?php if (($u['role'] ?? '') === 'admin'): ?>
-            <a href="<?= url('/admin') ?>">后台</a>
-          <?php endif; ?>
-          <a href="<?= url('/logout') ?>">退出</a>
-        <?php else: ?>
-          <a class="pc-nav-cta" href="<?= url('/login') ?>">登录</a>
-        <?php endif; ?>
       </nav>
       <div class="nav-side nav-side-r">
         <?php if (!empty($navRight)): ?>
@@ -70,6 +62,50 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
           <a class="nav-icon" href="<?= url('/search') ?>" aria-label="搜索">
             <svg viewBox="0 0 24 24" width="21" height="21"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 16l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </a>
+        <?php endif; ?>
+
+        <?php if ($u): ?>
+          <?php
+            $uNick  = (string) (($u['nickname'] ?? '') !== '' ? $u['nickname'] : $u['username']);
+            $uIsAdm = ($u['role'] ?? '') === 'admin';
+          ?>
+          <div class="nav-user" id="navUser">
+            <button class="nav-user-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="navUserMenu">
+              <?= avatar_html($u, 'xs') ?>
+              <span class="nav-user-name"><?= e($uNick) ?></span>
+              <svg class="nav-user-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="nav-user-menu" id="navUserMenu" role="menu">
+              <div class="nav-user-head">
+                <?= avatar_html($u, 'sm') ?>
+                <div class="nav-user-head-txt">
+                  <b><?= e($uNick) ?></b>
+                  <small>@<?= e($u['username']) ?><?= $uIsAdm ? ' · 管理员' : '' ?></small>
+                </div>
+              </div>
+              <a role="menuitem" href="<?= url('/user/profile') ?>">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.6 3.4-5.4 7-5.4s6.4 1.8 7 5.4" stroke-linecap="round"/></svg>
+                个人资料
+              </a>
+              <a role="menuitem" href="<?= url('/user') ?>">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="14" rx="2.2"/><path d="M3.5 10h17" stroke-linecap="round"/></svg>
+                我的中心
+              </a>
+              <?php if ($uIsAdm): ?>
+                <a role="menuitem" href="<?= url('/admin') ?>">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="4.5" width="17" height="15" rx="2.2"/><path d="M3.5 9h17M8.5 9v10.5" stroke-linecap="round"/></svg>
+                  后台管理
+                </a>
+              <?php endif; ?>
+              <div class="nav-user-sep"></div>
+              <a role="menuitem" class="danger" href="<?= url('/logout') ?>">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h7a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M10 12h10m0 0l-3-3m3 3l-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                退出登录
+              </a>
+            </div>
+          </div>
+        <?php else: ?>
+          <a class="nav-login" href="<?= url('/login') ?>">登录</a>
         <?php endif; ?>
       </div>
     </div>

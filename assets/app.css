@@ -1431,6 +1431,7 @@ img, svg { display: block; }
 
   /* 用户中心宽屏 */
   .profile-card, .info-list { margin-left: 0; margin-right: 0; }
+
   .profile-card { max-width: 760px; }
   .info-list { max-width: 760px; }
   .user-actions { padding-left: 0; padding-right: 0; max-width: 760px; }
@@ -1745,3 +1746,1453 @@ img, svg { display: block; }
 
 
 
+
+/* ==========================================================================
+   导航栏用户菜单（头像 + 昵称 → 下拉）
+   ========================================================================== */
+.nav-user {
+  position: relative;
+  margin-left: 10px;
+  flex: 0 0 auto;
+}
+.nav-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 10px 3px 3px;
+  border: none;
+  border-radius: 999px;
+  background: #F5F6F7;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  transition: background .15s;
+}
+.nav-user-btn:hover { background: #EBEDF0; }
+.nav-user-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.nav-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-user-caret {
+  color: var(--sub-2);
+  transition: transform .18s ease;
+  flex: 0 0 auto;
+}
+.nav-user.open .nav-user-caret { transform: rotate(180deg); }
+
+.nav-user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 208px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .13), 0 2px 8px rgba(0, 0, 0, .06);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.98);
+  transform-origin: top right;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+  z-index: 220;
+}
+.nav-user.open .nav-user-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.nav-user-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 12px;
+  border-bottom: 1px solid #F2F3F5;
+  margin-bottom: 4px;
+}
+.nav-user-head-txt { min-width: 0; }
+.nav-user-head-txt b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-user-head-txt small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--sub-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-user-menu a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  color: var(--text);
+  transition: background .12s;
+}
+.nav-user-menu a:hover { background: #F5F6F7; }
+.nav-user-menu a svg { color: var(--sub); flex: 0 0 auto; }
+.nav-user-menu a:hover svg { color: var(--green); }
+.nav-user-menu a.danger { color: #F53F3F; }
+.nav-user-menu a.danger svg { color: #F53F3F; }
+.nav-user-menu a.danger:hover { background: #FEF0F0; }
+.nav-user-menu a.danger:hover svg { color: #F53F3F; }
+
+.nav-user-sep {
+  height: 1px;
+  margin: 5px 6px;
+  background: #F2F3F5;
+}
+
+/* 未登录的登录按钮 */
+.nav-login {
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.nav-login:active { background: var(--green-d); }
+
+/* 窄屏：只留头像 */
+@media (max-width: 719px) {
+  .nav-user { margin-left: 4px; }
+  .nav-user-btn { padding: 2px; background: transparent; gap: 0; }
+  .nav-user-btn:hover { background: #F5F6F7; }
+  .nav-user-name, .nav-user-caret { display: none; }
+  .nav-user-menu { min-width: 200px; }
+}
+
+/* ==========================================================================
+   用户中心：下载记录 / 登录记录 双列
+   ========================================================================== */
+.user-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.user-two-col .user-col { margin-bottom: 0; }
+
+@media (min-width: 1024px) {
+  .user-two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+}
+
+/* 列内紧凑分页 */
+.pager-sm {
+  padding: 10px 16px 14px;
+  border-top: 1px solid #F2F3F5;
+}
+.pager-sm .pager-btn { font-size: 12.5px; }
+
+/* 双列时单元格子略收紧，避免文字被挤断 */
+@media (min-width: 1024px) {
+  .user-col .cell { padding: 11px 16px; }
+  .user-col .cell-title { font-size: 13.5px; }
+  .user-col .cell-sub { font-size: 12px; }
+  .user-col .log-list li { padding: 10px 16px; }
+  .user-col .log-main b { font-size: 13px; }
+  .user-col .log-main small {
+    font-size: 11.5px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-col .log-list time { font-size: 11.5px; }
+}
+
+/* 双列内的记录列表：强制单列，避免在窄栏里再拆成两列 */
+@media (min-width: 1024px) {
+  .user-col .cell-group {
+    display: block;
+    background: transparent;
+    border-radius: 0;
+  }
+  .user-col .cell-group .cell {
+    background: #fff;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    border: 1px solid #F2F3F5;
+  }
+  .user-col .cell-group .cell:last-child { margin-bottom: 0; }
+}
+
+/* 双列内下载记录：覆盖 .section > .cell-group:not(.form-card) 的两列网格 */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group,
+  .user-two-col .user-col > .cell-group:not(.form-card) {
+    display: block;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    margin: 0;
+    overflow: visible;
+  }
+  .user-two-col .user-col > .cell-group > .cell {
+    display: flex;
+    width: auto;
+    background: #fff;
+    border: 1px solid #F2F3F5;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    padding: 11px 14px;
+  }
+  .user-two-col .user-col > .cell-group > .cell:last-child { margin-bottom: 0; }
+  .user-two-col .user-col > .cell-group > .cell::after { display: none; }
+}
+
+/* 双列内下载记录：恢复横排紧凑布局（覆盖 .section > .cell-group .cell 的纵向卡片样式） */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group > .cell {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    min-height: 0;
+  }
+  .user-two-col .user-col > .cell-group > .cell:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    border-color: #F2F3F5;
+  }
+  .user-two-col .user-col > .cell-group > .cell .fbadge {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 10px;
+    flex: 0 0 36px;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-title {
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-sub {
+    margin-top: 3px;
+    font-size: 12px;
+  }
+}
+
+/* 用户中心宽屏：上半部分跟随双列总宽 */
+@media (min-width: 1024px) {
+  .user-page .profile-card,
+  .user-page .info-list {
+    max-width: none;
+  }
+}
+
+/* ==========================================================================
+   用户中心双列：下载记录与登录记录统一为「左中右」三段式，撑满整行
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group > .cell {
+    justify-content: space-between;
+    gap: 14px;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-two-col .user-col > .cell-group > .cell .cell-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 右侧时间：与登录记录的 <time> 保持一致 */
+  .user-two-col .user-col > .cell-group > .cell .cell-time,
+  .user-two-col .user-col .log-list time {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--sub-2);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  /* 登录记录也拉满，避免右侧时间飘在中间 */
+  .user-two-col .user-col .log-list li {
+    justify-content: space-between;
+  }
+  .user-two-col .user-col .log-list .log-main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .user-two-col .user-col .log-list .log-main b,
+  .user-two-col .user-col .log-list .log-main small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 双列记录：统一为连体列表（与登录记录一致），去掉卡片间空隙 */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group {
+    display: block;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #F2F3F5;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    overflow: hidden;
+    margin: 0;
+  }
+  .user-two-col .user-col > .cell-group > .cell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #F5F6F7;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
+    padding: 12px 14px;
+  }
+  .user-two-col .user-col > .cell-group > .cell:last-child { border-bottom: none; }
+  .user-two-col .user-col > .cell-group > .cell:hover {
+    background: #FAFBFC;
+    box-shadow: none;
+    transform: none;
+  }
+  /* 登录记录的卡片外壳也统一 */
+  .user-two-col .user-col > .log-list-card {
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #F2F3F5;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    margin: 0;
+    overflow: hidden;
+  }
+  .user-two-col .user-col > .log-list-card li {
+    border-bottom: 1px solid #F5F6F7;
+  }
+  .user-two-col .user-col > .log-list-card li:last-child { border-bottom: none; }
+  .user-two-col .user-col > .log-list-card li:hover { background: #FAFBFC; }
+}
+
+/* 修正：提高特异性，夺回白色卡片外壳 */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group:not(.form-card) {
+    display: block;
+    background: #fff;
+    border: 1px solid #F2F3F5;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    overflow: hidden;
+    margin: 0;
+  }
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #F5F6F7;
+    border-radius: 0;
+    margin: 0;
+    box-shadow: none;
+    padding: 12px 14px;
+    transform: none;
+  }
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell:last-child {
+    border-bottom: none;
+  }
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell:hover {
+    background: #FAFBFC;
+    box-shadow: none;
+    transform: none;
+    border-color: #F5F6F7;
+  }
+}
+
+/* ==========================================================================
+   平板断点补齐（600–1023px）
+   原来资源卡片要到 1024px 才变多列，600–1023 之间一直是单行列表，
+   在 768/834 这类平板宽度上横向空间被浪费。
+   ========================================================================== */
+@media (min-width: 600px) and (max-width: 1023.98px) {
+
+  /* 资源卡片：提前变两列网格 */
+  .section > .cell-group:not(.form-card) {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .section > .cell-group:not(.form-card) > .cell {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 16px;
+    border: 1px solid #E8EBEF;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    transition: box-shadow .16s, transform .16s, border-color .16s;
+  }
+  .section > .cell-group:not(.form-card) > .cell:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .07);
+    transform: translateY(-2px);
+    border-color: #E2E4E8;
+  }
+  .section > .cell-group:not(.form-card) > .cell .fbadge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 10.5px;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-main { margin-top: 12px; }
+  .section > .cell-group:not(.form-card) > .cell .cell-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-sub { margin-top: 6px; }
+  .section > .cell-group:not(.form-card) > .cell .cell-btn,
+  .section > .cell-group:not(.form-card) > .cell .cell-lock {
+    margin-top: 14px;
+    align-self: flex-start;
+    height: 30px;
+    padding: 0 16px;
+  }
+
+  /* 文件夹横滑 → 网格 */
+  .folder-scroll {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 0;
+    overflow: visible;
+  }
+  .folder-card { width: auto; }
+
+  /* 用户中心的记录列表保持单列，不参与网格 */
+  .user-page .section > .cell-group:not(.form-card) {
+    display: block;
+    background: #fff;
+    border-radius: 10px;
+    border: 1px solid #F2F3F5;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, .04);
+    overflow: hidden;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: none;
+    border-bottom: 1px solid #F5F6F7;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell:last-child {
+    border-bottom: none;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .fbadge {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 10px;
+    flex: 0 0 36px;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-main {
+    margin-top: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-time {
+    flex: 0 0 auto;
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--sub-2);
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+   导航断点前移：768px 起启用完整 PC 布局
+   原来 768–1023 是「半吊子」状态：顶部标题居中、底部 TabBar 还在、
+   但内容区已经是卡片网格，导航和内容两套逻辑打架。
+   ========================================================================== */
+@media (min-width: 768px) {
+  body.page-front { background: #EFF2F5; }
+
+  .frame {
+    max-width: 100%;
+    padding: 0 24px 40px;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    margin-top: 0;
+    padding: 0;
+    background: rgba(255, 255, 255, .92);
+    backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid #EBEDF0;
+  }
+  .navbar-inner {
+    max-width: 100%;
+    margin: 0 auto;
+    height: 64px;
+    padding: 0 24px;
+    justify-content: flex-start;
+  }
+  .nav-side { min-width: auto; }
+  .nav-logo { margin-left: 0; width: 30px; height: 30px; font-size: 15px; }
+  .nav-title {
+    position: static;
+    transform: none;
+    margin: 0 28px 0 12px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .nav-side-r { margin-left: auto; }
+
+  .pc-nav { display: flex; align-items: center; gap: 2px; }
+  .pc-nav a {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #4E5969;
+    transition: background .12s, color .12s;
+  }
+  .pc-nav a:hover { background: #F2F3F5; color: #1D2129; }
+  .pc-nav a.active { color: var(--green-d); background: var(--green-l); }
+
+  /* 768 起不再需要底部 TabBar */
+  .tabbar { display: none; }
+
+  .page-body { padding-top: 10px; }
+  .section-head { padding: 0 0 10px; }
+  .section > .cell-group,
+  .section > .empty,
+  .section > .log-list-card { margin: 0; }
+}
+
+/* 1024 起恢复居中定宽 */
+@media (min-width: 1024px) {
+  .frame {
+    max-width: 1280px;
+    padding: 0 32px 48px;
+  }
+  .navbar-inner {
+    max-width: 1280px;
+    padding: 0 32px;
+  }
+}
+
+/* ==========================================================================
+   用户中心上半区：资料卡 | 账号信息 双列等宽等高
+   ========================================================================== */
+.user-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.user-top .profile-card,
+.user-top .info-list {
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .user-top {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: stretch;   /* 两列同高 */
+    margin-bottom: 18px;
+  }
+
+  /* 资料卡纵向撑满，统计栏贴底 */
+  .user-top .profile-card {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+  }
+  .user-top .profile-card .profile-stats {
+    margin-top: auto;
+  }
+
+  /* 账号信息：四行等高铺满 */
+  .user-top .info-list {
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+  }
+  .user-top .info-list .info-row {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+}
+
+/* ==========================================================================
+   资源卡片：重排为「顶行 = 徽章 + 操作，下行 = 标题 + 元信息」
+   原布局四段纵向堆叠，间距散、高度虚高、按钮缩进与文字不对齐。
+   ========================================================================== */
+@media (min-width: 600px) {
+
+  /* 网格内的文件卡片 */
+  .section > .cell-group:not(.form-card) > .cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+    padding: 14px;
+    row-gap: 0;
+  }
+
+  /* 第一行：徽章居左 */
+  .section > .cell-group:not(.form-card) > .cell .fbadge {
+    order: 1;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    font-size: 10px;
+  }
+
+  /* 第一行：操作按钮居右 */
+  .section > .cell-group:not(.form-card) > .cell .cell-btn,
+  .section > .cell-group:not(.form-card) > .cell .cell-lock {
+    order: 2;
+    margin-left: auto;
+    margin-top: 2px;
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    align-self: flex-start;
+  }
+
+  /* 第二行：标题 + 元信息占满整行 */
+  .section > .cell-group:not(.form-card) > .cell .cell-main {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    margin-top: 11px;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -.1px;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--sub-2);
+  }
+}
+
+/* 用户中心的记录卡不受上面这套影响（保持横排三段式） */
+@media (min-width: 1024px) {
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell .fbadge { order: 0; width: 36px; height: 36px; }
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell .cell-time { order: 2; }
+  .user-two-col .user-col > .cell-group:not(.form-card) > .cell .cell-main {
+    order: 1;
+    flex: 1 1 auto;
+    width: auto;
+    margin-top: 0;
+  }
+}
+
+/* ==========================================================================
+   资源卡片：Grid 分区布局
+   ┌──────────────────────┐
+   │ [PDF]        [下载]  │  ← row 1: badge / 操作
+   │ 产品手册.pdf          │  ← row 2: 标题（跨整行）
+   │ 1.0 MB · 29 分钟前    │  ← row 2: 元信息
+   └──────────────────────┘
+   ========================================================================== */
+@media (min-width: 600px) {
+  .section > .cell-group:not(.form-card) > .cell {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "badge  btn"
+      "main   main";
+    align-items: start;
+    column-gap: 10px;
+    row-gap: 0;
+    padding: 14px;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .fbadge {
+    grid-area: badge;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    font-size: 10px;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-btn,
+  .section > .cell-group:not(.form-card) > .cell .cell-lock {
+    grid-area: btn;
+    justify-self: end;
+    align-self: start;
+    margin: 0;
+    height: 28px;
+    padding: 0 12px;
+    font-size: 12.5px;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-main {
+    grid-area: main;
+    margin-top: 11px;
+    min-width: 0;
+    width: auto;
+    flex: none;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: -.1px;
+  }
+  .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    margin-top: 4px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--sub-2);
+  }
+}
+
+/* 用户中心的记录卡保持横向三段式，不套用上面的 Grid */
+@media (min-width: 600px) {
+  .user-page .section > .cell-group:not(.form-card) > .cell {
+    display: flex;
+    grid-template-areas: none;
+    align-items: center;
+    column-gap: 12px;
+    row-gap: 0;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .fbadge {
+    width: 36px; height: 36px; border-radius: 9px; font-size: 10px;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-main {
+    margin-top: 0; flex: 1 1 auto; width: auto;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-time {
+    margin-left: auto;
+  }
+}
+
+/* ==========================================================================
+   资源卡片：大小/时间移到右下角，与标题同行右对齐
+   ┌────────────────────────┐
+   │ [PDF]          [下载]  │
+   │ 产品手册.pdf  1.0MB·31分│  ← 标题左，元信息右
+   └────────────────────────┘
+   ========================================================================== */
+@media (min-width: 600px) {
+  .section > .cell-group:not(.form-card) > .cell .cell-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px 10px;
+    margin-top: 11px;
+    min-width: 0;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-title {
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    flex: 0 0 auto;
+    margin-top: 0;
+    margin-left: auto;      /* 靠右 */
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* 用户中心保持原样，不受影响 */
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-main {
+    display: block;
+    margin-top: 0;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    margin-left: 0;
+    text-align: left;
+    margin-top: 3px;
+  }
+}
+
+/* ==========================================================================
+   资源卡片：两行四格
+   ┌──────────────────────────┐
+   │ [PDF]  产品手册.pdf        │   row1: 标识 | 标题
+   │ 1.0MB·33分钟前     [下载]  │   row2: 元信息 | 操作
+   └──────────────────────────┘
+   ========================================================================== */
+@media (min-width: 600px) {
+
+  .section > .cell-group:not(.form-card) > .cell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "badge title title"
+      "sub   sub   btn";
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 10px;
+    padding: 14px;
+  }
+
+  /* 拆开 wrapper，让标题与元信息各自落到 grid 区域 */
+  .section > .cell-group:not(.form-card) > .cell > .cell-main {
+    display: contents;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .fbadge {
+    grid-area: badge;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    font-size: 10px;
+    align-self: start;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-title {
+    grid-area: title;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+    letter-spacing: -.1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    grid-area: sub;
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--sub-2);
+    flex-wrap: nowrap;
+    overflow: hidden;
+  }
+
+  .section > .cell-group:not(.form-card) > .cell .cell-btn,
+  .section > .cell-group:not(.form-card) > .cell .cell-lock {
+    grid-area: btn;
+    justify-self: end;
+    align-self: center;
+    margin: 0;
+    height: 28px;
+    padding: 0 13px;
+    font-size: 12.5px;
+  }
+
+  /* 用户中心不套用本布局 */
+  .user-page .section > .cell-group:not(.form-card) > .cell {
+    display: flex;
+    grid-template-areas: none;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell > .cell-main {
+    display: block;
+  }
+}
+
+/* ==========================================================================
+   后台表格：列宽均分，避免某一列吃掉全部剩余空间导致留白
+   ========================================================================== */
+.adm-table { table-layout: fixed; width: 100%; }
+.adm-table th,
+.adm-table td { overflow: hidden; }
+.adm-table td.ellip {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 用户列保留头像+两行文字，允许更宽的内边距 */
+.adm-table td .fcell { min-width: 0; }
+.adm-table td .fcell-main { min-width: 0; }
+.adm-table td .fcell-main .fname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ==========================================================================
+   后台顶栏：头像 + 名称 → 下拉（个人资料 / 前往前台 / 退出）
+   ========================================================================== */
+.adm-user-menu {
+  position: relative;
+}
+.adm-user-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 4px;
+  border: 1px solid #E5E6EB;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.adm-user-btn:hover { background: #F7F8FA; border-color: #D9DBE0; }
+.adm-user-btn:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.adm-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-user-caret {
+  color: #86909C;
+  transition: transform .18s ease;
+  flex: 0 0 auto;
+}
+.adm-user-menu.open .adm-user-caret { transform: rotate(180deg); }
+
+.adm-user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  min-width: 208px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, .13), 0 2px 8px rgba(0, 0, 0, .06);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.98);
+  transform-origin: top right;
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+  z-index: 220;
+}
+.adm-user-menu.open .adm-user-dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.adm-user-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 12px;
+  border-bottom: 1px solid #F2F3F5;
+  margin-bottom: 4px;
+}
+.adm-user-head-txt { min-width: 0; }
+.adm-user-head-txt b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-user-head-txt small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: #86909C;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adm-user-dropdown a {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  color: var(--text);
+  transition: background .12s;
+}
+.adm-user-dropdown a:hover { background: #F5F6F7; }
+.adm-user-dropdown a svg { color: #86909C; flex: 0 0 auto; }
+.adm-user-dropdown a:hover svg { color: var(--green); }
+.adm-user-dropdown a.danger { color: #F53F3F; }
+.adm-user-dropdown a.danger svg { color: #F53F3F; }
+.adm-user-dropdown a.danger:hover { background: #FEF0F0; }
+.adm-user-dropdown a.danger:hover svg { color: #F53F3F; }
+
+.adm-user-sep {
+  height: 1px;
+  margin: 5px 6px;
+  background: #F2F3F5;
+}
+
+/* 窄屏只留头像 */
+@media (max-width: 719px) {
+  .adm-user-btn { padding: 2px 6px 2px 2px; gap: 0; }
+  .adm-user-name, .adm-user-caret { display: none; }
+}
+
+/* ==========================================================================
+   后台侧栏页脚：作者与版本
+   ========================================================================== */
+.adm-credit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, .38);
+  letter-spacing: .2px;
+  user-select: none;
+}
+.adm-credit .adm-ver {
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, .28);
+}
+
+/* ==========================================================================
+   个人资料页：两个表单双列并排，解除 760px 宽度限制
+   ========================================================================== */
+.profile-two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.profile-two-col .section { margin-bottom: 0; }
+.profile-two-col .form-card { max-width: none; }
+
+@media (min-width: 1024px) {
+  .profile-two-col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+  }
+  /* 双列里输入框不必拉满，避免一行字太长 */
+  .profile-two-col .form-card .field-row > input {
+    max-width: none;
+  }
+}
+
+/* 资料页顶部的用户卡：跟双列同宽 */
+.user-page > .profile-card {
+  max-width: none;
+}
+.user-page .form-card .form-actions,
+.user-page .form-hint {
+  max-width: none;
+}
+
+/* ==========================================================================
+   后台表格：移动端转卡片（< 768px）
+   窄屏下多列表格无法阅读，改为每行一张卡片，label 与值左右分布
+   ========================================================================== */
+@media (max-width: 767px) {
+
+  .adm-table {
+    table-layout: auto;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .adm-table thead { display: none; }
+  .adm-table tbody { display: block; }
+  .adm-table tr {
+    display: block;
+    background: #fff;
+    border: 1px solid #E8EBEF;
+    border-radius: 12px;
+    padding: 14px;
+    margin: 0 0 10px;
+  }
+  .adm-table tr:hover { background: #fff; }
+  .adm-table td {
+    display: block;
+    width: auto;
+    border: none;
+    padding: 0;
+    text-align: left !important;
+  }
+
+  /* 首列（含头像的那列）整块显示，不加 label */
+  .adm-table td[data-label="用户"] {
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #F2F3F5;
+  }
+
+  /* 其余列：label 左、值右 */
+  .adm-table td[data-label]:not([data-label="用户"]) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 7px 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .adm-table td[data-label]:not([data-label="用户"])::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: #86909C;
+    font-size: 12.5px;
+  }
+
+  /* 被 col-md 隐藏的列在卡片里恢复显示 */
+  .adm-table td.col-md { display: flex !important; }
+
+  /* 操作列贴右 */
+  .adm-table td[data-label="操作"] { justify-content: flex-end; padding-top: 10px; }
+
+  /* 表格外层不再横向滚动 */
+  .table-wrap { overflow-x: visible; }
+}
+
+/* ==========================================================================
+   用户中心记录卡：手机端两行布局
+   ┌──────────────────────────┐
+   │ PDF  一个很长的文件名…    │
+   │      已完成 · 25MB  昨天 │
+   └──────────────────────────┘
+   ========================================================================== */
+@media (max-width: 767px) {
+
+  /* 下载记录：徽章跨两行，标题在上、元信息与时间在下 */
+  .user-page .section > .cell-group:not(.form-card) > .cell {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      "badge main";
+    align-items: center;
+    column-gap: 11px;
+    row-gap: 0;
+    padding: 12px 14px;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .fbadge {
+    grid-area: badge;
+    align-self: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    font-size: 9.5px;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-main {
+    grid-area: main;
+    display: block;
+    margin-top: 0;
+    min-width: 0;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-title {
+    font-size: 13.5px;
+    line-height: 1.35;
+    max-width: 100%;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-sub {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    margin-top: 3px;
+    font-size: 11.5px;
+  }
+  .user-page .section > .cell-group:not(.form-card) > .cell .cell-time {
+    margin-left: auto;
+    text-align: right;
+    font-size: 11.5px;
+    white-space: nowrap;
+  }
+
+  /* 登录记录：UA 在小屏隐藏，只留 IP */
+  .user-page .log-list .log-ua { display: none; }
+  .user-page .log-list li {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 14px;
+  }
+  .user-page .log-list .log-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .user-page .log-list .log-main b {
+    font-size: 13px;
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-page .log-list .log-main small {
+    display: block;
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--sub-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .user-page .log-list time {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    padding-top: 1px;
+  }
+}
+
+/* 登录记录：小屏隐藏 UA，只保留 IP（独立页也生效） */
+@media (max-width: 767px) {
+  .log-list .log-ua { display: none; }
+  .log-list li {
+    align-items: flex-start;
+    gap: 10px;
+    padding: 11px 14px;
+  }
+  .log-list .log-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .log-list .log-main b {
+    display: block;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .log-list .log-main small {
+    display: block;
+    margin-top: 2px;
+    font-size: 11.5px;
+    color: var(--sub-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .log-list time {
+    flex: 0 0 auto;
+    font-size: 11.5px;
+    padding-top: 1px;
+    white-space: nowrap;
+  }
+
+  /* 独立记录页的下载条目同样两行化 */
+  .page-head + .section .cell-group:not(.form-card) > .cell,
+  .section > .cell-group:not(.form-card) > .cell {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
+}
+
+/* ==========================================================================
+   移动端后台表格：恢复标准表格 + 横向滑动（不是卡片）
+   覆盖此前误加的 card 模式
+   ========================================================================== */
+@media (max-width: 767px) {
+
+  /* 表格外壳允许横向滚动 */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+  }
+  /* 滚动条细一点 */
+  .table-wrap::-webkit-scrollbar { height: 5px; }
+  .table-wrap::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, .16);
+    border-radius: 3px;
+  }
+
+  /* 表格本体：强制正常表格布局，最小宽度保证不被压缩 */
+  .adm-table {
+    display: table;
+    table-layout: auto;
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    border-spacing: 0;
+  }
+  .adm-table thead { display: table-header-group; }
+  .adm-table tbody { display: table-row-group; }
+  .adm-table tr {
+    display: table-row;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .adm-table tr:hover { background: #FAFBFC; }
+  .adm-table th,
+  .adm-table td {
+    display: table-cell;
+    width: auto;
+    padding: 11px 10px;
+    border: none;
+    border-bottom: 1px solid #F2F3F5;
+    font-size: 12.5px;
+    vertical-align: middle;
+    text-align: left;
+  }
+  .adm-table th {
+    font-size: 12px;
+    color: #86909C;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .adm-table td[data-label]::before { content: none; }
+  .adm-table td[data-label="用户"] {
+    padding-bottom: 11px;
+    margin-bottom: 0;
+    border-bottom: 1px solid #F2F3F5;
+  }
+
+  /* 恢复 col-md 的隐藏策略，列太多时用滑动代替 */
+  .adm-table .col-md { display: table-cell; }
+
+  /* 长文本统一省略号 */
+  .adm-table td,
+  .adm-table td * {
+    max-width: 220px;
+  }
+  .adm-table td .fcell-main { max-width: 160px; }
+  .adm-table td .fcell-main .fname,
+  .adm-table td .fcell-main span {
+    display: block;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* ==========================================================================
+   全局：长标题一律省略号，避免撑破或截断成一半
+   ========================================================================== */
+.cell-title,
+.adm-table td,
+.adm-table td a,
+.fname,
+.log-main b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   强制恢复表格布局（压倒此前的 card 模式规则）
+   ========================================================================== */
+@media (max-width: 767px) {
+
+  .adm-table {
+    display: table !important;
+    table-layout: auto !important;
+    width: 100% !important;
+    min-width: 720px !important;
+  }
+  .adm-table thead { display: table-header-group !important; }
+  .adm-table tbody { display: table-row-group !important; }
+  .adm-table tr {
+    display: table-row !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .adm-table th,
+  .adm-table td,
+  .adm-table td[data-label],
+  .adm-table td[data-label]:not([data-label="用户"]),
+  .adm-table td.col-md,
+  .adm-table td.col-md[data-label] {
+    display: table-cell !important;
+    width: auto !important;
+    padding: 11px 10px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #F2F3F5 !important;
+    font-size: 12.5px !important;
+    vertical-align: middle !important;
+    text-align: left !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  /* 干掉卡片模式生成的 label 前缀 */
+  .adm-table td[data-label]::before,
+  .adm-table td[data-label]:not([data-label="用户"])::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  /* 首列不再有卡片式的分割线 */
+  .adm-table td[data-label="用户"] {
+    padding-bottom: 11px !important;
+    margin-bottom: 0 !important;
+    border-bottom: 1px solid #F2F3F5 !important;
+  }
+
+  /* 首列内部：头像 + 两行文字，限宽避免撑破 */
+  .adm-table td[data-label="用户"] .fcell { min-width: 0; }
+  .adm-table td[data-label="用户"] .fcell-main {
+    min-width: 0;
+    max-width: 150px;
+  }
+  .adm-table td[data-label="用户"] .fcell-main .fname,
+  .adm-table td[data-label="用户"] .fcell-main span {
+    display: block;
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 操作列图标不换行 */
+  .adm-table td.ta-r { text-align: right !important; }
+  .adm-table td.ta-r .icon-btn { display: inline-flex; }
+}

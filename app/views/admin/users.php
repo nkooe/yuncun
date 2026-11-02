@@ -20,13 +20,15 @@ $levelOptions = $levels ?? [];
     <table class="adm-table">
       <thead>
         <tr>
-          <th>用户</th>
-          <th style="width:110px">等级</th>
-          <th class="col-md" style="width:90px">已下载</th>
-          <th class="col-md" style="width:100px">配额</th>
-          <th style="width:70px">状态</th>
-          <th class="col-md" style="width:132px">最近登录</th>
-          <th style="width:80px;text-align:right">操作</th>
+          <th style="width:22%">用户</th>
+          <th style="width:12%">注册时间</th>
+          <th style="width:11%">最近登录</th>
+          <th style="width:14%">登录 IP</th>
+          <th style="width:10%">等级</th>
+          <th class="col-md" style="width:8%">已下载</th>
+          <th class="col-md" style="width:9%">配额</th>
+          <th style="width:7%">状态</th>
+          <th style="width:7%;text-align:right">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -35,7 +37,7 @@ $levelOptions = $levels ?? [];
             $quota = (int) $u['download_quota'];
         ?>
           <tr data-id="<?= (int) $u['id'] ?>">
-            <td>
+            <td data-label="用户">
               <div class="fcell">
                 <?= avatar_html($u, 'xs') ?>
                 <div class="fcell-main" style="flex-direction:column;align-items:flex-start;gap:1px">
@@ -44,22 +46,25 @@ $levelOptions = $levels ?? [];
                 </div>
               </div>
             </td>
-            <td>
+            <td data-label="注册时间" class="dim nowrap"><?= e($u['created_at'] !== '' ? date('Y-m-d', strtotime((string) $u['created_at'])) : '—') ?></td>
+            <td data-label="最近登录" class="dim nowrap"><?= e($u['last_login_at'] ? time_human((string) $u['last_login_at']) : '从未登录') ?></td>
+            <td data-label="登录 IP" class="dim mono nowrap ellip" title="<?= e($u['last_login_ip'] ?: '') ?>"><?= e($u['last_login_ip'] ?: '—') ?></td>
+            <td data-label="等级">
               <?php if ($u['level_name']): ?>
                 <span class="level-badge" style="--lc:<?= e($u['level_color']) ?>"><?= e($u['level_name']) ?></span>
               <?php else: ?>
                 <span class="dim">—</span>
               <?php endif; ?>
             </td>
-            <td class="col-md mono"><?= (int) $u['dl_count'] ?></td>
-            <td class="col-md mono">
+            <td data-label="已下载" class="col-md mono"><?= (int) $u['dl_count'] ?></td>
+            <td data-label="配额" class="col-md mono">
               <?= $quota === 0 ? '<span class="dim">不限</span>' : (int) $u['download_used'] . ' / ' . $quota ?>
             </td>
-            <td>
+            <td data-label="状态">
               <?= (int) $u['status'] === 1 ? '<span class="tag-ok">正常</span>' : '<span class="tag-off">禁用</span>' ?>
             </td>
-            <td class="col-md dim nowrap"><?= e(time_human((string) $u['last_login_at'])) ?></td>
-            <td class="ta-r">
+
+            <td data-label="操作" class="ta-r">
               <button type="button" class="icon-btn js-edit-user"
                 data-id="<?= (int) $u['id'] ?>"
                 data-name="<?= e($u['nickname']) ?>"

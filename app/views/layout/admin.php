@@ -72,19 +72,9 @@ $icons = [
     <?php endforeach; ?>
   </nav>
   <div class="adm-foot">
-    <a class="adm-item" href="<?= url('/') ?>" target="_blank" rel="noopener">
-      <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>
-      <span>查看前台</span>
-    </a>
-    <div class="adm-user">
-      <?= avatar_html($u, 'sm') ?>
-      <div class="adm-user-i">
-        <b><?= e($u['nickname'] ?? $u['username'] ?? '') ?></b>
-        <small>管理员</small>
-      </div>
-      <a class="adm-logout" href="<?= url('/logout') ?>" title="退出登录">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12H9"/><path d="M12 4H6a1 1 0 00-1 1v14a1 1 0 001 1h6"/></svg>
-      </a>
+    <div class="adm-credit">
+      <span>作者：<?= e(setting('author_name', 'Coco')) ?></span>
+      <span class="adm-ver">v<?= e(APP_VERSION) ?></span>
     </div>
   </div>
 </aside>
@@ -98,7 +88,39 @@ $icons = [
     </button>
     <h1><?= e($pageTitle ?? '后台管理') ?></h1>
     <div class="adm-top-r">
-      <a class="adm-chip" href="<?= url('/') ?>">前台</a>
+      <?php
+        $aNick  = (string) (($u['nickname'] ?? '') !== '' ? $u['nickname'] : ($u['username'] ?? ''));
+        $aIsAdm = ($u['role'] ?? '') === 'admin';
+      ?>
+      <div class="adm-user-menu" id="admUserMenu">
+        <button class="adm-user-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="admUserDropdown">
+          <?= avatar_html($u, 'xs') ?>
+          <span class="adm-user-name"><?= e($aNick) ?></span>
+          <svg class="adm-user-caret" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="adm-user-dropdown" id="admUserDropdown" role="menu">
+          <div class="adm-user-head">
+            <?= avatar_html($u, 'sm') ?>
+            <div class="adm-user-head-txt">
+              <b><?= e($aNick) ?></b>
+              <small>@<?= e($u['username'] ?? '') ?><?= $aIsAdm ? ' · 管理员' : '' ?></small>
+            </div>
+          </div>
+          <a role="menuitem" href="<?= url('/user/profile') ?>">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c.6-3.6 3.4-5.4 7-5.4s6.4 1.8 7 5.4" stroke-linecap="round"/></svg>
+            个人资料
+          </a>
+          <a role="menuitem" href="<?= url('/') ?>">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10.5L12 4l8 6.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9h12v-9" stroke-linecap="round"/></svg>
+            前往前台
+          </a>
+          <div class="adm-user-sep"></div>
+          <a role="menuitem" class="danger" href="<?= url('/logout') ?>">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h7a2 2 0 002-2v-2" stroke-linecap="round"/><path d="M10 12h10m0 0l-3-3m3 3l-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            退出登录
+          </a>
+        </div>
+      </div>
     </div>
   </header>
 

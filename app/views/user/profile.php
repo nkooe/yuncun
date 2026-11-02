@@ -6,6 +6,7 @@
 $u = $user;
 $initial = mb_strtoupper(mb_substr($u['nickname'] !== '' ? $u['nickname'] : $u['username'], 0, 1));
 ?>
+<div class="user-page">
 <div class="page-head">
   <a class="back-link" href="<?= url('/user') ?>">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
@@ -27,6 +28,8 @@ $initial = mb_strtoupper(mb_substr($u['nickname'] !== '' ? $u['nickname'] : $u['
     <?php endif; ?>
   </div>
 </div>
+
+<div class="profile-two-col">
 
 <section class="section">
   <div class="section-head"><h3>基本资料</h3></div>
@@ -73,6 +76,6 @@ $initial = mb_strtoupper(mb_substr($u['nickname'] !== '' ? $u['nickname'] : $u['
   </form>
 </section>
 
-<div class="user-actions">
-  <a class="btn btn-danger-ghost btn-sm" href="<?= url('/logout') ?>">退出登录</a>
-</div>
+</div><!-- /.profile-two-col -->
+
+</div><!-- /.user-page -->
