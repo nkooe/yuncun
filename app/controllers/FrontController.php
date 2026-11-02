@@ -29,8 +29,15 @@ class FrontController
         [$visSql, $visParams] = $this->visibilityFilter('f');
         $where .= $visSql;
 
-        $total  = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('files') . ' f WHERE ' . $where, $visParams);
-        $pager  = paginate($total, $page, $perPage);
+        // 总数 / 总大小 / 总下载量用同一条件，合并成一次聚合查询
+        $agg = Db::row(
+            'SELECT COUNT(*) AS `cnt`, COALESCE(SUM(f.`size`),0) AS `sz`, COALESCE(SUM(f.`downloads`),0) AS `dl` '
+            . 'FROM ' . Db::t('files') . ' f WHERE ' . $where,
+            $visParams
+        ) ?? ['cnt' => 0, 'sz' => 0, 'dl' => 0];
+
+        $total = (int) $agg['cnt'];
+        $pager = paginate($total, $page, $perPage);
 
         $files = Db::all(
             'SELECT f.`id`, f.`name`, f.`ext`, f.`size`, f.`downloads`, f.`created_at`, '
@@ -51,17 +58,11 @@ class FrontController
             . ' ORDER BY `sort` ASC, `id` ASC LIMIT 12'
         );
 
-        // 统计口径必须与列表一致，否则会出现「显示 30 个、实际只能看到 22 个」
+        // 统计口径与列表完全一致（同一个 $where），避免「显示 30 个、实际只能看到 22 个」
         $stats = [
             'files'     => $total,
-            'size'      => (int) Db::val(
-                'SELECT COALESCE(SUM(f.`size`),0) FROM ' . Db::t('files') . ' f WHERE ' . $where,
-                $visParams
-            ),
-            'downloads' => (int) Db::val(
-                'SELECT COALESCE(SUM(f.`downloads`),0) FROM ' . Db::t('files') . ' f WHERE ' . $where,
-                $visParams
-            ),
+            'size'      => (int) $agg['sz'],
+            'downloads' => (int) $agg['dl'],
         ];
 
         view('front/index', [

@@ -354,7 +354,6 @@ class Storage
         header('Content-Disposition: attachment; filename="' . $asciiName . '"; '
             . "filename*=UTF-8''" . rawurlencode($name));
         header('Accept-Ranges: bytes');
-        header('X-Content-Type-Options: nosniff');
         header('Cache-Control: private, no-store, max-age=0');
         header('Pragma: no-cache');
 
