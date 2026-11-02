@@ -10,7 +10,7 @@ define('APP_PATH', APP_ROOT . '/app');
 define('DATA_PATH', APP_ROOT . '/data');
 define('STORAGE_PATH', APP_ROOT . '/storage');
 define('RUNTIME_PATH', APP_ROOT . '/runtime');
-define('APP_VERSION', '1.1.14');
+define('APP_VERSION', '1.1.15');
 define('APP_NAME', '云盘');
 
 // 运行环境
@@ -62,9 +62,14 @@ function detect_base_path(): string
 // session
 if (session_status() === PHP_SESSION_NONE) {
     $bp = APP_INSTALLED ? (Config::get('app.base_path', '') ?: '') : '';
+    // 仅在 HTTPS 下加 Secure，避免 HTTP 调试环境拿不到 session
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443
+        || strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')) === 'https';
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => $bp === '' ? '/' : $bp . '/',
+        'secure'   => $isHttps,
         'httponly' => true,
         'samesite' => 'Lax',
     ]);

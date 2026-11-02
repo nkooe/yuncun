@@ -457,6 +457,45 @@ function can_access_level(int $needLevelId, ?array $user = null): bool
 
 
 /**
+ * 读取配额状态，必要时按周期懒重置。
+ * @return array{unlimited:bool,quota:int,used:int,left:int,period:string,reset_at:?string,percent:int}
+ */
+function quota_state(array $user): array
+{
+    $uid     = (int) $user['id'];
+    $period  = (string) ($user['quota_period'] ?? 'total');
+    $quota   = (int) ($user['download_quota'] ?? 0);
+    $used    = (int) ($user['download_used'] ?? 0);
+    $resetAt = $user['quota_reset_at'] ?? null;
+
+    if ($period !== 'total') {
+        $needReset = empty($resetAt) || strtotime((string) $resetAt) <= time();
+        if ($needReset) {
+            $next = $period === 'daily'
+                ? strtotime('tomorrow 00:00:00')
+                : strtotime('first day of next month 00:00:00');
+            Db::update('users', [
+                'download_used'  => 0,
+                'quota_reset_at' => date('Y-m-d H:i:s', $next),
+                'updated_at'     => now(),
+            ], '`id` = ?', [$uid]);
+            $used = 0;
+            $resetAt = date('Y-m-d H:i:s', $next);
+        }
+    }
+
+    return [
+        'unlimited' => $quota === 0,
+        'quota'     => $quota,
+        'used'      => $used,
+        'left'      => $quota === 0 ? -1 : max(0, $quota - $used),
+        'period'    => $period,
+        'reset_at'  => $resetAt,
+        'percent'   => $quota === 0 ? 0 : min(100, (int) round($used / max(1, $quota) * 100)),
+    ];
+}
+
+/**
  * 扣减一次下载配额。必须先扣再输出，防止并发绕过。
  * @return array{ok:bool,msg:string,state:array}
  */

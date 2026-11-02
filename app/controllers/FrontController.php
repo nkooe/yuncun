@@ -220,6 +220,11 @@ class FrontController
     public function folder(string $id): void
     {
         $this->guardGuest();
+        if (!ctype_digit($id)) {
+            http_response_code(404);
+            view('errors/404', [], 'front');
+            return;
+        }
         $folderId = (int) $id;
 
         $folder = Db::row(

@@ -47,11 +47,26 @@ class AuthController
         view('auth/register', [], 'auth');
     }
 
+    /** 同一 IP 每小时允许的注册数 */
+    private const REG_MAX_PER_HOUR = 3;
+
     public function doRegister(): void
     {
         if ((int) setting('allow_register', 1) === 0) {
             flash('error', '本站已关闭注册');
             redirect('/login');
+        }
+
+        // 防止脚本批量注册：复用 login_logs，用 msg 标记注册事件
+        $ip     = client_ip();
+        $recent = (int) Db::val(
+            'SELECT COUNT(*) FROM ' . Db::t('login_logs')
+            . ' WHERE ip = ? AND msg = ? AND created_at > ?',
+            [$ip, '注册', date('Y-m-d H:i:s', time() - 3600)]
+        );
+        if ($recent >= self::REG_MAX_PER_HOUR) {
+            flash('error', '注册过于频繁，请 1 小时后再试');
+            redirect('/register');
         }
 
         $username = post('username');
@@ -112,6 +127,21 @@ class AuthController
         if ($user) {
             Auth::establish($user);
         }
+
+        // 记录注册事件，供 IP 频率限制统计
+        try {
+            Db::insert('login_logs', [
+                'user_id'    => $id,
+                'username'   => $username,
+                'ip'         => $ip,
+                'ua'         => mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+                'status'     => 'ok',
+                'msg'        => '注册',
+                'created_at' => $now,
+            ]);
+        } catch (Throwable) {
+        }
+
         flash('success', '注册成功');
         redirect('/user');
     }

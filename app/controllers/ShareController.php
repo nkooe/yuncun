@@ -30,6 +30,10 @@ class ShareController
     }
 
     /** 提交提取码 */
+    /** 同一提取码连续错误的上限与冷却时长（秒） */
+    private const CODE_MAX_FAIL = 5;
+    private const CODE_LOCK_SECONDS = 900;
+
     public function unlock(string $token): void
     {
         [$share, $file, $err] = $this->resolve($token);
@@ -37,19 +41,47 @@ class ShareController
             $this->renderError($err);
         }
 
-        $input = trim((string) ($_POST['code'] ?? ''));
-        if ($input === '' || !hash_equals((string) $share['code'], $input)) {
+        // 提取码不是机密，但 4 位数字全量尝试只要几千次，必须限流
+        $key  = '_share_fail_' . $token;
+        $fail = $_SESSION[$key] ?? ['n' => 0, 'until' => 0];
+
+        if ((int) $fail['until'] > time()) {
+            $wait = (int) ceil(((int) $fail['until'] - time()) / 60);
             view('front/share', [
                 'token'    => $token,
                 'share'    => $share,
                 'file'     => $file,
                 'needCode' => true,
                 'verified' => false,
-                'error'    => '提取码不正确',
+                'error'    => "尝试过于频繁，请 {$wait} 分钟后再试",
             ], 'front');
             return;
         }
 
+        $input = trim((string) ($_POST['code'] ?? ''));
+        if ($input === '' || !hash_equals((string) $share['code'], $input)) {
+            $fail['n'] = (int) $fail['n'] + 1;
+            if ($fail['n'] >= self::CODE_MAX_FAIL) {
+                $fail = ['n' => 0, 'until' => time() + self::CODE_LOCK_SECONDS];
+                $msg = '提取码连续错误次数过多，请 15 分钟后再试';
+            } else {
+                $left = self::CODE_MAX_FAIL - $fail['n'];
+                $msg  = "提取码不正确，还可尝试 {$left} 次";
+            }
+            $_SESSION[$key] = $fail;
+
+            view('front/share', [
+                'token'    => $token,
+                'share'    => $share,
+                'file'     => $file,
+                'needCode' => true,
+                'verified' => false,
+                'error'    => $msg,
+            ], 'front');
+            return;
+        }
+
+        unset($_SESSION[$key]);
         $_SESSION['_share_ok'][$token] = time();
         redirect('/s/' . $token);
     }

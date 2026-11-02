@@ -11,6 +11,10 @@ class DownloadController
 {
     public function file(string $id): void
     {
+        // 严格数字：避免 /download/1.5 之类被 (int) 截断后误命中文件 1
+        if (!ctype_digit($id)) {
+            $this->deny('文件不存在', 404);
+        }
         $fileId = (int) $id;
 
         $file = Db::row(
