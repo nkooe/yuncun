@@ -10,7 +10,7 @@ define('APP_PATH', APP_ROOT . '/app');
 define('DATA_PATH', APP_ROOT . '/data');
 define('STORAGE_PATH', APP_ROOT . '/storage');
 define('RUNTIME_PATH', APP_ROOT . '/runtime');
-define('APP_VERSION', '1.1.24');
+define('APP_VERSION', '1.1.25');
 define('APP_NAME', '云盘');
 
 // 运行环境

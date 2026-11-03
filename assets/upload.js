@@ -33,6 +33,44 @@
     return j;
   }
 
+  /**
+   * 带上传进度的 POST。fetch 拿不到上传进度，只能用 XHR。
+   * onProgress 收到 0–1 的比例。
+   */
+  function apiWithProgress(path, data, onProgress, onXhr) {
+    return new Promise(function (resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      if (typeof onXhr === 'function') onXhr(xhr);
+      xhr.open('POST', BASE + path);
+      xhr.setRequestHeader('X-CSRF-Token', CSRF);
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+      if (onProgress && xhr.upload) {
+        xhr.upload.onprogress = function (e) {
+          if (e.lengthComputable && e.total > 0) {
+            onProgress(Math.min(1, e.loaded / e.total));
+          }
+        };
+      }
+
+      xhr.onload = function () {
+        var j;
+        try {
+          j = JSON.parse(xhr.responseText);
+        } catch (err) {
+          reject(new Error('服务器响应异常（HTTP ' + xhr.status + '）'));
+          return;
+        }
+        if (!j.ok) reject(new Error(j.msg || '请求失败'));
+        else resolve(j);
+      };
+      xhr.onerror = function () { reject(new Error('网络错误')); };
+      xhr.ontimeout = function () { reject(new Error('上传超时')); };
+      xhr.onabort = function () { reject(new Error('已取消')); };
+      xhr.send(data);
+    });
+  }
+
   function fmtSize(n) {
     if (!n) return '0 B';
     var u = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -58,6 +96,7 @@
 
   var pending = 0;
   var failed = 0;
+  var cancelledCount = 0;
 
   function createRow(file) {
     var row = document.createElement('div');
@@ -96,6 +135,21 @@
   }
 
   async function uploadOne(file, row) {
+    var init = null;
+    try {
+      return await uploadOneInner(file, row, function (v) { init = v; });
+    } catch (e) {
+      // 取消了就把服务端临时分片收掉，否则要等 24 小时的 GC 才清
+      if (init && init.upload_id && row.dataset.abort === '1') {
+        var abFd = new FormData();
+        abFd.append('upload_id', init.upload_id);
+        api('/api/upload/abort', abFd).catch(function () {});
+      }
+      throw e;
+    }
+  }
+
+  async function uploadOneInner(file, row, onInit) {
     var size = file.size;
     var guessChunk = 2 * 1024 * 1024;
     var guessChunks = Math.max(1, Math.ceil(size / guessChunk));
@@ -109,12 +163,44 @@
     initFd.append('folder_id', String(currentFolder));
 
     var init = await api('/api/upload/init', initFd);
+    if (typeof onInit === 'function') onInit(init);
 
     var chunkSize = init.chunk_size;
     var total = init.chunks;
-    var finished = 0;
     var cursor = 0;
     var concurrency = Math.min(3, total);
+
+    // 每个分片实际占多少字节：最后一片通常不满，按分片数平均会让
+    // 进度条与实际传输量脱节（32MB+8MB 的文件，第一片传完就已走了 80%）。
+    var weights = [];
+    var sizeSum = 0;
+    for (var wi = 0; wi < total; wi++) {
+      var ws = wi * chunkSize;
+      var w = Math.min(size, ws + chunkSize) - ws;
+      weights.push(w);
+      sizeSum += w;
+    }
+
+    // 每个分片各自的完成度 0–1，聚合后按字节加权得到总进度
+    var parts = new Array(total).fill(0);
+
+    // 进行中的请求：取消时要真的掐断，否则已经在传的分片会一直跑完。
+    // 32MB 分片要传二十多秒，3 个 worker 并行时点取消等于什么都没做。
+    var inflight = [];
+    function killInflight() {
+      inflight.forEach(function (x) { try { x.abort(); } catch (e) {} });
+      inflight = [];
+    }
+    var watcher = setInterval(function () {
+      if (row.dataset.abort === '1') {
+        killInflight();
+      }
+    }, 300);
+    function refresh() {
+      var done = 0;
+      for (var k = 0; k < total; k++) done += weights[k] * parts[k];
+      setProgress(row, sizeSum > 0 ? done / sizeSum : 0);
+    }
 
     async function worker() {
       while (cursor < total) {
@@ -133,20 +219,47 @@
         var retry = 0;
         while (true) {
           try {
-            await api('/api/upload/chunk', fd);
+            // 传的过程中持续回报，否则 32MB 分片要传二十多秒，
+            // 这段时间进度条完全静止，看起来像卡死。
+            await apiWithProgress('/api/upload/chunk', fd, function (r) {
+              parts[i] = r;
+              refresh();
+            }, function (xhr) {
+              inflight.push(xhr);
+              xhr.addEventListener('loadend', function () {
+                var p = inflight.indexOf(xhr);
+                if (p >= 0) inflight.splice(p, 1);
+              });
+            });
+            parts[i] = 1;
+            refresh();
             break;
           } catch (e) {
+            // 取消不是网络失败：直接抛出，不能进重试。
+            // 否则 abort 掉的请求会被当成瞬时错误重发，
+            // 每个 worker 各重试两次，进度条跟着反复归零又涨回去。
+            if (row.dataset.abort === '1' || /已取消/.test(e.message || '')) {
+              throw e;
+            }
             if (++retry > 2) throw e;
+            parts[i] = 0;
+            refresh();
             await new Promise(function (r) { setTimeout(r, 600 * retry); });
           }
         }
-
-        finished++;
-        setProgress(row, finished / total);
       }
     }
 
-    await Promise.all(Array.from({ length: concurrency }, worker));
+    try {
+      await Promise.all(Array.from({ length: concurrency }, worker));
+    } finally {
+      clearInterval(watcher);
+      killInflight();
+    }
+
+    // 走到这里说明所有分片都传完了。若期间取消过，前面 worker 会抛异常，
+    // 不会执行到这里；这里再兜一次底，避免取消后仍然 finish 入库。
+    if (row.dataset.abort === '1') throw new Error('已取消');
 
     var finFd = new FormData();
     finFd.append('upload_id', init.upload_id);
@@ -174,20 +287,24 @@
             if (res.deduped) row.classList.add('is-dedup');
           })
           .catch(function (err) {
+            var cancelled = /已取消/.test(err.message || '');
             row.dataset.done = '0';
-            row.classList.add('is-err');
-            row.querySelector('.up-pct').textContent = '失败';
-            row.querySelector('.up-size').textContent = err.message;
-            failed++;
+            row.classList.add(cancelled ? 'is-cancel' : 'is-err');
+            row.querySelector('.up-pct').textContent = cancelled ? '已取消' : '失败';
+            row.querySelector('.up-size').textContent = cancelled ? '' : err.message;
+            if (cancelled) { cancelledCount++; } else { failed++; }
           })
           .finally(function () {
             pending--;
             if (pending === 0) {
-              if (failed === 0) {
+              if (failed > 0) {
+                toast(failed + ' 个文件上传失败', 'error');
+              } else if (cancelledCount > 0) {
+                // 全部被取消时不要假装成功，也不要自动刷新覆盖掉取消记录
+                toast(cancelledCount + ' 个上传已取消');
+              } else {
                 toast('全部上传完成，正在刷新列表…');
                 setTimeout(function () { location.reload(); }, 900);
-              } else {
-                toast(failed + ' 个文件上传失败', 'error');
               }
             }
           });
