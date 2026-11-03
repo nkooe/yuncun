@@ -3016,9 +3016,9 @@ img, svg { display: block; }
      就会把 td 重新显示出来，th 却仍是 none，表头与数据整体错位一格。
      实测现象：表头是「文件 / 用户 / 状态」，数据却是「文件名 / 用户名 / IP」。 */
   .adm-table th,
-  .adm-table td:not(.col-md),
-  .adm-table td[data-label]:not(.col-md),
-  .adm-table td[data-label]:not([data-label="用户"]):not(.col-md) {
+  .adm-table td:not(.col-md):not(.col-xs),
+  .adm-table td[data-label]:not(.col-md):not(.col-xs),
+  .adm-table td[data-label]:not([data-label="用户"]):not(.col-md):not(.col-xs) {
     display: table-cell;
     width: auto;
     padding: 11px 10px;
@@ -3093,4 +3093,53 @@ img, svg { display: block; }
   .log-clean { gap: 8px; }
   .log-clean select { flex: 1 1 100%; height: 34px; }
   .log-clean .btn-sm { flex: 1 1 0; min-width: 0; padding: 0 10px; font-size: 13px; }
+}
+/* --------------------------------------------------------------------------
+   窄屏表格：收窄操作列
+   360–414px 的手机上，操作列宽度按桌面预留（172px / 124px），
+   加上文件列与状态列后整表超出容器，会被横向裁掉一部分。
+   这里把按钮字号与间距压下来，并把操作列改为可换行，让表格容进视口。
+   -------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .adm-table th:last-child,
+  .adm-table td:last-child {
+    width: auto;
+  }
+
+  .adm-table td.ta-r {
+    white-space: normal;
+    line-height: 1.6;
+  }
+
+  .adm-table td.ta-r .btn-link {
+    display: inline-block;
+    margin: 0 2px;
+    font-size: 12px;
+    padding: 2px 4px;
+  }
+
+  .adm-table td.ta-r .icon-btn {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* 状态徽章在窄屏下允许缩小 */
+  .adm-table .tag-ok,
+  .adm-table .tag-off {
+    padding: 1px 6px;
+    font-size: 11px;
+  }
+}
+/* 极小屏（≤380px）让等级列让位给操作按钮，
+   否则 360px 的 iPhone SE 上「操作」表头被裁成「操」，删除按钮点不到 */
+@media (max-width: 380px) {
+  .adm-table .col-xs { display: none; }
+}
+/* 分享列表在窄屏下收窄状态列，给操作按钮留出空间 */
+@media (max-width: 560px) {
+  .adm-table th:nth-child(5),
+  .adm-table td:nth-child(5) {
+    width: 72px !important;
+  }
+  .adm-table .fbadge-sm { width: 26px; height: 26px; font-size: 9px; }
 }

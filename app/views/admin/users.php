@@ -20,15 +20,15 @@ $levelOptions = $levels ?? [];
     <table class="adm-table">
       <thead>
         <tr>
-          <th style="width:22%">用户</th>
-          <th style="width:12%">注册时间</th>
-          <th style="width:11%">最近登录</th>
-          <th style="width:14%">登录 IP</th>
-          <th style="width:10%">等级</th>
+          <th style="width:26%">用户</th>
+          <th class="col-md" style="width:12%">注册时间</th>
+          <th class="col-md" style="width:11%">最近登录</th>
+          <th class="col-md" style="width:14%">登录 IP</th>
+          <th class="col-xs" style="width:12%">等级</th>
           <th class="col-md" style="width:8%">已下载</th>
           <th class="col-md" style="width:9%">配额</th>
-          <th style="width:7%">状态</th>
-          <th style="width:7%;text-align:right">操作</th>
+          <th style="width:9%">状态</th>
+          <th style="width:10%;text-align:right">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -46,10 +46,10 @@ $levelOptions = $levels ?? [];
                 </div>
               </div>
             </td>
-            <td data-label="注册时间" class="dim nowrap"><?= e($u['created_at'] !== '' ? date('Y-m-d', strtotime((string) $u['created_at'])) : '—') ?></td>
-            <td data-label="最近登录" class="dim nowrap"><?= e($u['last_login_at'] ? time_human((string) $u['last_login_at']) : '从未登录') ?></td>
-            <td data-label="登录 IP" class="dim mono nowrap ellip" title="<?= e($u['last_login_ip'] ?: '') ?>"><?= e($u['last_login_ip'] ?: '—') ?></td>
-            <td data-label="等级">
+            <td data-label="注册时间" class="col-md dim nowrap"><?= e($u['created_at'] !== '' ? date('Y-m-d', strtotime((string) $u['created_at'])) : '—') ?></td>
+            <td data-label="最近登录" class="col-md dim nowrap"><?= e($u['last_login_at'] ? time_human((string) $u['last_login_at']) : '从未登录') ?></td>
+            <td data-label="登录 IP" class="col-md dim mono nowrap ellip" title="<?= e($u['last_login_ip'] ?: '') ?>"><?= e($u['last_login_ip'] ?: '—') ?></td>
+            <td data-label="等级" class="col-xs">
               <?php if ($u['level_name']): ?>
                 <span class="level-badge" style="--lc:<?= e($u['level_color']) ?>"><?= e($u['level_name']) ?></span>
               <?php else: ?>
