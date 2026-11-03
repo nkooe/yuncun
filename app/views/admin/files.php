@@ -192,7 +192,7 @@ $keyword = $keyword ?? '';
               <option value="<?= (int) $lv['id'] ?>"><?= e($lv['name']) ?>（权重 <?= (int) $lv['sort'] ?>）</option>
             <?php endforeach; ?>
           </select>
-          <small class="field-hint">用户等级权重 ≥ 该等级权重时才可下载</small>
+          <small class="field-hint">决定<b>能否下载</b>：等级权重 ≥ 该值才允许下载。设为「不限」时任何人拿到链接都能下载。</small>
         </div>
         <div class="field-row">
           <label>可见等级</label>
@@ -202,7 +202,7 @@ $keyword = $keyword ?? '';
               <option value="<?= (int) $lv['id'] ?>"><?= e($lv['name']) ?>（权重 <?= (int) $lv['sort'] ?>）</option>
             <?php endforeach; ?>
           </select>
-          <small class="field-hint">开启「等级不足时隐藏」后，不满足该等级的访客将看不到此文件</small>
+          <small class="field-hint">只决定<b>列表里是否显示</b>，不限制下载。需要真正拦住下载，请同时设置上面的「所需等级」。</small>
         </div>
         <div class="field-row">
           <label>仅登录可见</label>

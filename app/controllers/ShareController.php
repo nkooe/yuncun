@@ -122,6 +122,19 @@ class ShareController
             redirect('/s/' . $token);
         }
 
+        // 等级要求：分享链接不能成为绕过下载权限的通道。
+        // 之前这里只校验了 token、提取码与下载次数，没有校验文件的
+        // level_id，导致设置「超级会员可下载」的文件，普通会员甚至游客
+        // 只要拿到分享链接就能下载（实测直接下载 403、走分享 200）。
+        // is_public 与 login_required 不在这里拦：分享本身就是管理员
+        // 主动发出的外链授权，语义上已经覆盖了这两项。
+        $needLevelId = (int) ($file['level_id'] ?? 0);
+        if (!can_access_level($needLevelId, Auth::user())) {
+            $lv     = level_by_id($needLevelId);
+            $lvName = $lv !== null ? $lv['name'] : '更高';
+            $this->renderError('该资源需要「' . $lvName . '」及以上等级才能下载');
+        }
+
         // 先确认实体存在，避免文件缺失也消耗下载名额
         $path = Storage::resolveFilePath($file);
         if ($path === '') {
