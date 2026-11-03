@@ -95,6 +95,73 @@ class AdminUserController
         $this->respond(true, '已保存');
     }
 
+    /**
+     * 删除用户。
+     *
+     * 与「禁用」的区别：禁用只是不让登录，数据全留；删除是把账号抹掉。
+     *
+     * 四张表引用 users，处理策略各不相同：
+     *   files.uploader_id     转给执行删除的管理员——文件属于内容，不该跟着人消失
+     *   shares.user_id        同上，分享链接继续有效，管理员可再自行撤销
+     *   downloads.user_id     置 0，保留下载历史（统计、审计要用）
+     *   login_logs.user_id    置 0，该表本身带 username，记录仍可读
+     *
+     * 两条硬约束：不能删自己，不能删掉最后一个管理员。
+     */
+    public function delete(): void
+    {
+        $id = (int) post('id');
+        $u  = $id > 0 ? Db::row('SELECT * FROM ' . Db::t('users') . ' WHERE `id` = ?', [$id]) : null;
+        if ($u === null) {
+            $this->respond(false, '用户不存在');
+        }
+
+        if ($id === Auth::id()) {
+            $this->respond(false, '不能删除自己的账号');
+        }
+
+        if (($u['role'] ?? '') === 'admin') {
+            $left = (int) Db::val(
+                'SELECT COUNT(*) FROM ' . Db::t('users') . ' WHERE `role` = ? AND `id` <> ?',
+                ['admin', $id]
+            );
+            if ($left < 1) {
+                $this->respond(false, '至少需要保留一个管理员');
+            }
+        }
+
+        $adminId = Auth::id();
+        $now     = now();
+
+        Db::begin();
+        try {
+            Db::exec(
+                'UPDATE ' . Db::t('files') . ' SET `uploader_id` = ?, `updated_at` = ? WHERE `uploader_id` = ?',
+                [$adminId, $now, $id]
+            );
+            Db::exec(
+                'UPDATE ' . Db::t('shares') . ' SET `user_id` = ? WHERE `user_id` = ?',
+                [$adminId, $id]
+            );
+            Db::exec(
+                'UPDATE ' . Db::t('downloads') . ' SET `user_id` = 0 WHERE `user_id` = ?',
+                [$id]
+            );
+            Db::exec(
+                'UPDATE ' . Db::t('login_logs') . ' SET `user_id` = 0 WHERE `user_id` = ?',
+                [$id]
+            );
+            Db::exec('DELETE FROM ' . Db::t('users') . ' WHERE `id` = ?', [$id]);
+            Db::commit();
+        } catch (Throwable $e) {
+            Db::rollback();
+            $this->respond(false, '删除失败：' . $e->getMessage());
+        }
+
+        admin_audit('delete_user', 'user', $id, '删除用户：' . $u['username']);
+        $this->respond(true, '已删除用户');
+    }
+
     private function respond(bool $ok, string $msg): never
     {
         admin_respond($ok, $msg, '/admin/users');

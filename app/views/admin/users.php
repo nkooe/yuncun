@@ -75,6 +75,15 @@ $levelOptions = $levels ?? [];
                 title="编辑">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16v4z"/><path d="M13.5 5.5l4 4"/></svg>
               </button>
+              <?php if ((int) $u['id'] !== Auth::id()): ?>
+                <button type="button" class="icon-btn danger js-del-user"
+                  data-id="<?= (int) $u['id'] ?>"
+                  data-name="<?= e($u['username']) ?>"
+                  data-dl="<?= (int) $u['dl_count'] ?>"
+                  title="删除">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>
+                </button>
+              <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
@@ -189,5 +198,40 @@ $levelOptions = $levels ?? [];
   });
 
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') modal.hidden=true; });
+
+  /* 删除用户 */
+  var CSRF = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+  var BASE = (document.querySelector('meta[name="base-url"]') || {}).content || '';
+
+  document.addEventListener('click', async function(e){
+    var b = e.target.closest ? e.target.closest('.js-del-user') : null;
+    if(!b) return;
+
+    var name = b.getAttribute('data-name') || '';
+    var dl   = b.getAttribute('data-dl') || '0';
+    var msg = '删除用户「' + name + '」？\n\n' +
+              '该账号会被永久移除，无法恢复。\n' +
+              '其上传的文件与分享会转给当前管理员，' + dl + ' 条下载记录保留但不再关联到用户。';
+    if(!confirm(msg)) return;
+
+    b.disabled = true;
+    var fd = new FormData();
+    fd.append('id', b.getAttribute('data-id'));
+
+    try {
+      var r = await fetch(BASE + '/admin/users/delete', {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': CSRF, 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd
+      });
+      var j = await r.json();
+      if(!j.ok) throw new Error(j.msg || '删除失败');
+      if(window.wxToast) window.wxToast(j.msg || '已删除');
+      setTimeout(function(){ location.reload(); }, 600);
+    } catch(err) {
+      b.disabled = false;
+      if(window.wxToast) window.wxToast(err.message, 'error'); else alert(err.message);
+    }
+  });
 })();
 </script>

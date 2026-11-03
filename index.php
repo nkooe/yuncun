@@ -74,6 +74,7 @@ $router->post('/admin/folders/delete', 'AdminFolderController@delete', ['require
 // 用户与等级
 $router->get('/admin/users', 'AdminUserController@index', ['requireAdmin']);
 $router->post('/admin/users/update', 'AdminUserController@update', ['requireAdmin']);
+$router->post('/admin/users/delete', 'AdminUserController@delete', ['requireAdmin']);
 
 $router->get('/admin/levels', 'AdminLevelController@index', ['requireAdmin']);
 $router->post('/admin/levels/save', 'AdminLevelController@save', ['requireAdmin']);
