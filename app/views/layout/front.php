@@ -32,7 +32,7 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
 <meta name="format-detection" content="telephone=no">
 <title><?= e($pageTitle ?? setting('site_name', '云盘')) ?></title>
 <link rel="stylesheet" href="<?= asset('app.css') ?>">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(site_favicon_svg()) ?>">
+<link rel="icon" type="image/png" href="<?= e(site_favicon_svg()) ?>">
 </head>
 <body class="page-front">
 <div class="frame">
