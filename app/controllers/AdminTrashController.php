@@ -97,24 +97,69 @@ class AdminTrashController
             $this->respond(false, '文件夹不存在');
         }
 
-        // 父级仍被删除时，挂回根目录
-        $pid = (int) $folder['parent_id'];
-        $data = ['deleted_at' => null, 'updated_at' => now()];
-        if ($pid > 0) {
-            $ok = Db::val('SELECT 1 FROM ' . Db::t('folders') . ' WHERE `id` = ? AND `deleted_at` IS NULL', [$pid]);
-            if ($ok === null) {
-                $data['parent_id'] = 0;
+        // 删除时是整棵子树一起进回收站（AdminFolderController::delete 用
+        // collectSubtree），恢复也只恢复一层的话就和删除不对称：删一个三层
+        // 目录，回收站里显示 3 个文件夹、3 个文件，点恢复却只回来 1 个文件夹
+        // 和它的直接文件，剩下 2 层还留在回收站里，容易被误清空。
+        $ids = [$id];
+        $queue = [$id];
+        while ($queue) {
+            $cur = array_shift($queue);
+            $children = Db::all(
+                'SELECT `id` FROM ' . Db::t('folders') . ' WHERE `parent_id` = ?',
+                [$cur]
+            );
+            foreach ($children as $c) {
+                $cid = (int) $c['id'];
+                if (!in_array($cid, $ids, true)) {
+                    $ids[] = $cid;
+                    $queue[] = $cid;
+                }
             }
         }
-        Db::update('folders', $data, '`id` = ?', [$id]);
 
-        // 同时恢复目录内的文件
-        $n = Db::exec(
-            'UPDATE ' . Db::t('files') . ' SET `deleted_at` = NULL, `updated_at` = ? WHERE `folder_id` = ? AND `deleted_at` IS NOT NULL',
-            [now(), $id]
-        );
+        $now = now();
+        $in  = implode(',', array_fill(0, count($ids), '?'));
 
-        $this->respond(true, '文件夹已恢复' . ($n > 0 ? "，含 {$n} 个文件" : ''));
+        Db::begin();
+        try {
+            // 先恢复整棵子树
+            Db::exec(
+                'UPDATE ' . Db::t('folders') . " SET `deleted_at` = NULL, `updated_at` = ? WHERE `id` IN ({$in})",
+                array_merge([$now], $ids)
+            );
+
+            // 再检查根节点的父级：父级仍被删除时挂回根目录，
+            // 否则恢复后它会指向一个不在列表里的父级，界面上就看不见了。
+            $pid = (int) $folder['parent_id'];
+            if ($pid > 0) {
+                $ok = Db::val(
+                    'SELECT 1 FROM ' . Db::t('folders') . ' WHERE `id` = ? AND `deleted_at` IS NULL',
+                    [$pid]
+                );
+                if ($ok === null) {
+                    Db::exec(
+                        'UPDATE ' . Db::t('folders') . ' SET `parent_id` = 0, `updated_at` = ? WHERE `id` = ?',
+                        [$now, $id]
+                    );
+                }
+            }
+
+            // 最后一并恢复这些目录里的文件
+            $n = Db::exec(
+                'UPDATE ' . Db::t('files') . " SET `deleted_at` = NULL, `updated_at` = ?"
+                . " WHERE `folder_id` IN ({$in}) AND `deleted_at` IS NOT NULL",
+                array_merge([$now], $ids)
+            );
+
+            Db::commit();
+        } catch (Throwable $e) {
+            Db::rollback();
+            $this->respond(false, '恢复失败：' . $e->getMessage());
+        }
+
+        $extra = count($ids) > 1 ? '（含 ' . (count($ids) - 1) . ' 个子目录）' : '';
+        $this->respond(true, '文件夹已恢复' . $extra . ((int) $n > 0 ? "，含 {$n} 个文件" : ''));
     }
 
     /** 永久删除选中的文件 */
