@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 session_start();
 
 define('INST_ROOT', __DIR__);
-define('INST_VERSION', '1.1.35');
+define('INST_VERSION', '1.1.36');
 
 require_once __DIR__ . '/app/Schema.php';
 
@@ -325,6 +325,29 @@ if ($doInstall) {
                 $ins->execute([$k, json_encode($v, JSON_UNESCAPED_UNICODE)]);
             }
             $installLog[] = ['写入默认设置', true, count($settings) . ' 项'];
+
+            // 4.5 默认等级
+            // 这段此前缺失：建表之后直接把等级表留空，后台「等级管理」是空白页，
+            // 用户也无法被分配到任何等级。用 INSERT IGNORE 的等价写法保证幂等——
+            // 已经存在同名等级时不重复插入。
+            $lvIns = $pdo->prepare(
+                "INSERT INTO `{$db['prefix']}levels`
+                 (`name`,`sort`,`color`,`description`,`is_default`,`created_at`)
+                 SELECT ?,?,?,?,?,? FROM DUAL
+                 WHERE NOT EXISTS (
+                     SELECT 1 FROM `{$db['prefix']}levels` WHERE `name` = ?
+                 )"
+            );
+            $lvCount = 0;
+            foreach (Schema::defaultLevels() as $lv) {
+                $lvIns->execute([
+                    $lv['name'], $lv['sort'], $lv['color'], $lv['description'],
+                    $lv['is_default'], $now, $lv['name'],
+                ]);
+                $lvCount += $lvIns->rowCount();
+            }
+            $totalLv = (int) $pdo->query("SELECT COUNT(*) FROM `{$db['prefix']}levels`")->fetchColumn();
+            $installLog[] = ['初始化等级', true, $totalLv . ' 个（本次新增 ' . $lvCount . '）'];
 
             // 5. 目录与防护文件
             $dirs = [

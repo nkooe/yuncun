@@ -204,9 +204,33 @@ class Schema
             'share_enabled'          => 1,
             'recycle_days'           => 30,
             'chunk_size'             => 2097152,
+            // 以下四项在代码里一直有 fallback，但从未写进默认设置表。
+            // 结果是全新安装后后台设置页读不到它们，与升级过来的环境不一致。
+            'author_name'            => 'Coco',
+            'disk_guard_percent'     => 92,
+            'hide_locked'            => 0,
+            'log_keep_days'          => 30,
         ];
     }
 
+    /**
+     * 默认等级。
+     *
+     * 原先 建表 → 建管理员 → 写设置 之后就结束了，等级表是空的。
+     * 后果：后台「等级管理」空白，无法给用户分配等级；若开了
+     * hide_locked，凡是设了所需等级的资源都判断不了可见性。
+     * 这三条与 tools/seed.php 保持一致。
+     *
+     * @return array<int, array{name:string, sort:int, color:string, description:string, is_default:int}>
+     */
+    public static function defaultLevels(): array
+    {
+        return [
+            ['name' => '普通会员', 'sort' => 0,  'color' => '#86909C', 'description' => '默认等级，可访问公开资源',   'is_default' => 1],
+            ['name' => 'VIP 会员', 'sort' => 10, 'color' => '#E67E22', 'description' => '可访问需要 VIP 等级的资源', 'is_default' => 0],
+            ['name' => '超级会员', 'sort' => 20, 'color' => '#722ED1', 'description' => '可访问全部等级资源',       'is_default' => 0],
+        ];
+    }
     /**
      * 建表（幂等）。返回创建的表名列表。
      * @param PDO $pdo
