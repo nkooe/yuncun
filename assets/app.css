@@ -3010,16 +3010,13 @@ img, svg { display: block; }
     margin: 0;
   }
 
-  /* 注意：这里不能把 td.col-md 列进来。
-     上面 720px 的媒体查询用 .adm-table .col-md { display: none } 隐藏次要列，
-     而这里的选择器优先级更高（多一个元素名），一旦写上 display: table-cell
-     就会把 td 重新显示出来，th 却仍是 none，表头与数据整体错位一格。
-     实测现象：表头是「文件 / 用户 / 状态」，数据却是「文件名 / 用户名 / IP」。 */
+  /* 这段原本是「强制恢复表格布局」，为的是压倒一套早期把 tr 做成卡片的规则。
+     那套规则早就删了，所以 display: table-cell 已经多余——浏览器对 th/td
+     的默认值就是它。多余不要紧，问题在于它曾经写成 td:not(.col-md)，
+     于是新增的 col-xs 又被它重新显示出来，th 隐藏而 td 还在，列整体错位。
+     现在去掉 display，也不再枚举「不要隐藏的类」，隐藏类怎么加都不会冲突。 */
   .adm-table th,
-  .adm-table td:not(.col-md):not(.col-xs),
-  .adm-table td[data-label]:not(.col-md):not(.col-xs),
-  .adm-table td[data-label]:not([data-label="用户"]):not(.col-md):not(.col-xs) {
-    display: table-cell;
+  .adm-table td {
     width: auto;
     padding: 11px 10px;
     border: 0;
