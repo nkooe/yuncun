@@ -16,7 +16,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>开启登录下载</b>
           <small>开启后游客只能浏览资源列表，下载按钮将被隐藏，且服务端拒绝未登录的下载请求</small>
         </div>
-        <input type="checkbox" name="require_login_download" value="1" <?= (int) $v('require_login_download', 0) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="require_login_download"><input type="checkbox" name="require_login_download" value="1" <?= (int) $v('require_login_download', 0) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
 
@@ -25,7 +25,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>游客可浏览</b>
           <small>关闭后未登录访问首页将直接跳转到登录页</small>
         </div>
-        <input type="checkbox" name="guest_visible" value="1" <?= (int) $v('guest_visible', 1) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="guest_visible"><input type="checkbox" name="guest_visible" value="1" <?= (int) $v('guest_visible', 1) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
 
@@ -34,7 +34,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>开放注册</b>
           <small>关闭后仅管理员可创建账号</small>
         </div>
-        <input type="checkbox" name="allow_register" value="1" <?= (int) $v('allow_register', 1) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="allow_register"><input type="checkbox" name="allow_register" value="1" <?= (int) $v('allow_register', 1) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
 
@@ -43,7 +43,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>启用分享链接</b>
           <small>允许生成带提取码的分享地址</small>
         </div>
-        <input type="checkbox" name="share_enabled" value="1" <?= (int) $v('share_enabled', 1) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="share_enabled"><input type="checkbox" name="share_enabled" value="1" <?= (int) $v('share_enabled', 1) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
 
@@ -52,7 +52,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>等级不足时隐藏</b>
           <small>开启后，等级不够的资源直接不出现在前台列表；关闭则显示但锁定下载</small>
         </div>
-        <input type="checkbox" name="hide_locked" value="1" <?= (int) $v('hide_locked', 0) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="hide_locked"><input type="checkbox" name="hide_locked" value="1" <?= (int) $v('hide_locked', 0) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
 
@@ -61,7 +61,7 @@ $v = static fn(string $k, mixed $d = '') => $settings[$k] ?? $d;
           <b>维护模式</b>
           <small>开启后前台显示维护页，管理员仍可访问后台</small>
         </div>
-        <input type="checkbox" name="maintenance_mode" value="1" <?= (int) $v('maintenance_mode', 0) === 1 ? 'checked' : '' ?>>
+        <input type="hidden" name="_present[]" value="maintenance_mode"><input type="checkbox" name="maintenance_mode" value="1" <?= (int) $v('maintenance_mode', 0) === 1 ? 'checked' : '' ?>>
         <span class="switch"></span>
       </label>
     </div>

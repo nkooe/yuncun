@@ -60,8 +60,16 @@ class AdminController
     public function saveSettings(): void
     {
         // 白名单：只允许保存已知键，避免任意写
-        // 开关类必须全量写入：未勾选的 checkbox 不会出现在 POST 中，
-        // 若按「存在才更新」处理，开关将永远无法关闭。
+        //
+        // 开关类的两难：未勾选的 checkbox 不会出现在 POST 中，
+        // 所以「存在才更新」会让开关永远关不掉；
+        // 而「全量写入」又会让任何不带该字段的请求静默关闭功能
+        // （脚本、第三方调用、表单少渲染一个字段都会中招）。
+        //
+        // 解法：视图为每个开关输出 <input type="hidden" name="_present[]" value="键名">，
+        // 只有出现在 _present 里的开关才参与写入，其余保持原值。
+        $present = (array) ($_POST['_present'] ?? []);
+
         $boolKeys = [
             'require_login_download', 'guest_visible', 'allow_register',
             'maintenance_mode', 'share_enabled', 'hide_locked',
@@ -78,6 +86,9 @@ class AdminController
 
         $saved = 0;
         foreach ($boolKeys as $k) {
+            if (!in_array($k, $present, true)) {
+                continue;   // 表单未包含该开关，保持原值
+            }
             $on = isset($_POST[$k]) && (string) $_POST[$k] === '1' ? 1 : 0;
             setting_set($k, $on);
             $saved++;

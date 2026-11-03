@@ -30,9 +30,41 @@ class ShareController
     }
 
     /** 提交提取码 */
-    /** 同一提取码连续错误的上限与冷却时长（秒） */
+    /** 同一来源在窗口期内允许的提取码错误次数与窗口时长（秒） */
     private const CODE_MAX_FAIL = 5;
     private const CODE_LOCK_SECONDS = 900;
+
+    /**
+     * 统计当前 IP 对指定分享在窗口期内的提取码错误次数。
+     *
+     * 用数据库而不是 SESSION：SESSION 按浏览器隔离，清掉 cookie 计数就归零，
+     * 攻击者循环换会话即可无限尝试。按 IP + token 记录才能挡住脚本。
+     */
+    private function codeFailCount(string $token): int
+    {
+        return (int) Db::val(
+            'SELECT COUNT(*) FROM ' . Db::t('login_logs')
+            . ' WHERE ip = ? AND username = ? AND msg = ? AND created_at > ?',
+            [client_ip(), mb_substr($token, 0, 32), '提取码', date('Y-m-d H:i:s', time() - self::CODE_LOCK_SECONDS)]
+        );
+    }
+
+    /** 记录一次提取码错误，供 codeFailCount() 统计 */
+    private function logCodeFail(string $token): void
+    {
+        try {
+            Db::insert('login_logs', [
+                'user_id'    => 0,
+                'username'   => mb_substr($token, 0, 32),
+                'ip'         => client_ip(),
+                'ua'         => mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255),
+                'status'     => 'fail',
+                'msg'        => '提取码',
+                'created_at' => now(),
+            ]);
+        } catch (Throwable) {
+        }
+    }
 
     public function unlock(string $token): void
     {
@@ -41,12 +73,9 @@ class ShareController
             $this->renderError($err);
         }
 
-        // 提取码不是机密，但 4 位数字全量尝试只要几千次，必须限流
-        $key  = '_share_fail_' . $token;
-        $fail = $_SESSION[$key] ?? ['n' => 0, 'until' => 0];
-
-        if ((int) $fail['until'] > time()) {
-            $wait = (int) ceil(((int) $fail['until'] - time()) / 60);
+        // 提取码只有 4 位，全量尝试只要几千次，必须限流
+        if ($this->codeFailCount($token) >= self::CODE_MAX_FAIL) {
+            $wait = (int) ceil(self::CODE_LOCK_SECONDS / 60);
             view('front/share', [
                 'token'    => $token,
                 'share'    => $share,
@@ -60,15 +89,12 @@ class ShareController
 
         $input = trim((string) ($_POST['code'] ?? ''));
         if ($input === '' || !hash_equals((string) $share['code'], $input)) {
-            $fail['n'] = (int) $fail['n'] + 1;
-            if ($fail['n'] >= self::CODE_MAX_FAIL) {
-                $fail = ['n' => 0, 'until' => time() + self::CODE_LOCK_SECONDS];
-                $msg = '提取码连续错误次数过多，请 15 分钟后再试';
-            } else {
-                $left = self::CODE_MAX_FAIL - $fail['n'];
-                $msg  = "提取码不正确，还可尝试 {$left} 次";
-            }
-            $_SESSION[$key] = $fail;
+            $this->logCodeFail($token);
+            $failed = $this->codeFailCount($token);
+            $left   = max(0, self::CODE_MAX_FAIL - $failed);
+            $msg    = $left > 0
+                ? "提取码不正确，还可尝试 {$left} 次"
+                : '提取码连续错误次数过多，请 15 分钟后再试';
 
             view('front/share', [
                 'token'    => $token,
@@ -81,7 +107,6 @@ class ShareController
             return;
         }
 
-        unset($_SESSION[$key]);
         $_SESSION['_share_ok'][$token] = time();
         redirect('/s/' . $token);
     }
@@ -97,23 +122,33 @@ class ShareController
             redirect('/s/' . $token);
         }
 
-        // 次数上限
-        $max = (int) $share['max_downloads'];
-        $done = (int) $share['downloads'];
-        if ($max > 0 && $done >= $max) {
-            $this->renderError('该分享的下载次数已用完');
-        }
-
+        // 先确认实体存在，避免文件缺失也消耗下载名额
         $path = Storage::resolveFilePath($file);
         if ($path === '') {
             $this->renderError('文件实体缺失，请联系分享者');
         }
 
-        // 计数
-        Db::exec(
-            'UPDATE ' . Db::t('shares') . ' SET `downloads` = `downloads` + 1 WHERE `id` = ?',
-            [(int) $share['id']]
-        );
+        // 原子占位：把「检查上限」与「计数 +1」合成一条 UPDATE。
+        // 原来先读 downloads 再判断、最后另发一条 UPDATE 递增，
+        // 两步之间存在窗口，并发请求会各自读到旧值而一起通过，
+        // 导致实际下载次数超过 max_downloads。
+        $max = (int) $share['max_downloads'];
+        if ($max > 0) {
+            $claimed = Db::exec(
+                'UPDATE ' . Db::t('shares')
+                . ' SET `downloads` = `downloads` + 1'
+                . ' WHERE `id` = ? AND `downloads` < `max_downloads`',
+                [(int) $share['id']]
+            );
+            if ($claimed === 0) {
+                $this->renderError('该分享的下载次数已用完');
+            }
+        } else {
+            Db::exec(
+                'UPDATE ' . Db::t('shares') . ' SET `downloads` = `downloads` + 1 WHERE `id` = ?',
+                [(int) $share['id']]
+            );
+        }
 
         $dlId = 0;
         try {
