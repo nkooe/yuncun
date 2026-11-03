@@ -32,7 +32,25 @@ class Auth
         }
         if ($u === null) {
             unset($_SESSION['uid']);
+            self::$user = null;
+            return null;
         }
+
+        // 会话版本：用 password_hash 的摘要。改密码后 password_hash 变化，
+        // 其他设备上的旧会话在下次请求时就对不上，自动失效。
+        // 没有这一步的话，用户在 A 设备改密码，B 设备的登录态仍然有效。
+        $curVer = self::sessionVersion((string) $u['password_hash']);
+        $sesVer = (string) ($_SESSION['pwv'] ?? '');
+
+        if ($sesVer === '') {
+            // 升级前建立的老会话没有版本号，补写而不打断，避免一次全站掉线
+            $_SESSION['pwv'] = $curVer;
+        } elseif (!hash_equals($sesVer, $curVer)) {
+            unset($_SESSION['uid'], $_SESSION['pwv'], $_SESSION['login_at']);
+            self::$user = null;
+            return null;
+        }
+
         self::$user = $u;
         return self::$user;
     }
@@ -40,6 +58,12 @@ class Auth
     public static function id(): int
     {
         return (int) (self::user()['id'] ?? 0);
+    }
+
+    /** 由 password_hash 派生的会话版本，改密码即改变 */
+    private static function sessionVersion(string $hash): string
+    {
+        return substr(hash('sha256', 'wxpan-sv|' . $hash), 0, 16);
     }
 
     public static function check(): bool
@@ -151,6 +175,7 @@ class Auth
         session_regenerate_id(true);
         $_SESSION['uid'] = (int) $user['id'];
         $_SESSION['login_at'] = time();
+        $_SESSION['pwv'] = self::sessionVersion((string) ($user['password_hash'] ?? ''));
         self::$loaded = false;
         self::$user = null;
 
