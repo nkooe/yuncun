@@ -1,4 +1,4 @@
-# 微信网盘 · Apache 伪静态规则
+# 云盘 · Apache 伪静态规则
 # 适用于启用了 mod_rewrite 的 Apache 2.4+ / 宝塔
 
 <IfModule mod_rewrite.c>
