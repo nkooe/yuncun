@@ -8,7 +8,7 @@ class AdminLogController
 {
     public function index(): void
     {
-        $this->autoClean();
+        housekeeping(true);   // 管理员正在看日志，忽略节流立即清理
 
         $tab = get('tab', 'downloads');
         if (!in_array($tab, ['downloads', 'logins', 'admin'], true)) {
@@ -120,25 +120,4 @@ class AdminLogController
     }
 
     /** 超过保留期的日志在打开页面时自动清理（每小时最多一次） */
-    private function autoClean(): void
-    {
-        $days = (int) setting('log_keep_days', 30);
-        if ($days <= 0) {
-            return;
-        }
-
-        $last = (int) ($_SESSION['_log_clean_at'] ?? 0);
-        if (time() - $last < 3600) {
-            return;
-        }
-        $_SESSION['_log_clean_at'] = time();
-
-        $before = date('Y-m-d H:i:s', time() - $days * 86400);
-        foreach (['downloads', 'login_logs', 'admin_logs'] as $t) {
-            try {
-                Db::exec('DELETE FROM ' . Db::t($t) . ' WHERE `created_at` < ?', [$before]);
-            } catch (Throwable) {
-            }
-        }
-    }
 }

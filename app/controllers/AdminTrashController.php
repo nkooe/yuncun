@@ -14,7 +14,7 @@ class AdminTrashController
         $page = max(1, get_int('page', 1));
         $perPage = max(5, min(100, (int) setting('page_size', 20)));
 
-        $this->autoClean();
+        housekeeping(true);   // 管理员正在看回收站，忽略节流立即清理
 
         $pager = ['total' => 0, 'page' => 1, 'pages' => 1, 'has_prev' => false, 'has_next' => false, 'per_page' => $perPage, 'offset' => 0];
         $files = [];
@@ -177,27 +177,6 @@ class AdminTrashController
 
     // ---------- 内部 ----------
 
-    /** 自动清理超过保留期的项目 */
-    private function autoClean(): void
-    {
-        $days = (int) setting('recycle_days', 30);
-        if ($days <= 0) {
-            return;
-        }
-        $before = date('Y-m-d H:i:s', time() - $days * 86400);
-
-        try {
-            $ids = array_column(
-                Db::all('SELECT `id` FROM ' . Db::t('files') . ' WHERE `deleted_at` IS NOT NULL AND `deleted_at` < ?', [$before]),
-                'id'
-            );
-            if ($ids) {
-                AdminFileController::purge(['ids' => $ids]);
-            }
-            Db::exec('DELETE FROM ' . Db::t('folders') . ' WHERE `deleted_at` IS NOT NULL AND `deleted_at` < ?', [$before]);
-        } catch (Throwable) {
-        }
-    }
 
     private function idsFromRequest(): array
     {

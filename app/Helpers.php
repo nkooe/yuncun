@@ -521,3 +521,108 @@ function quota_consume(array $user): array
 
     return ['ok' => true, 'msg' => '', 'state' => $st];
 }
+
+/**
+ * 回收站与日志的定期清理。
+ *
+ * 原先这两件事各挂在对应页面上：只有打开 /admin/trash 才清回收站，
+ * 只有打开 /admin/logs 才清日志。管理员几个月不看这两个页面，
+ * 过期数据就一直在库里和磁盘上堆着。
+ *
+ * 改成挂在后台任意页面的中间件上，用文件锁每小时最多跑一次。
+ * 用文件而不是 SESSION：不同管理员会话各自独立，用 SESSION
+ * 会让每个会话都触发一轮。
+ *
+ * @param bool $force 忽略节流立即执行（管理员主动打开回收站/日志页时用）
+ */
+function housekeeping(bool $force = false): void
+{
+    static $done = false;
+    if ($done) {
+        return;
+    }
+
+    $dir = RUNTIME_PATH . '/cache';
+    if (!is_dir($dir) && !@mkdir($dir, 0755, true) && !is_dir($dir)) {
+        return;
+    }
+    $lockFile = $dir . '/housekeeping.lock';
+
+    // 先判断文件是否存在，再 fopen('c')。
+    // 反过来写会有坑：fopen('c') 会创建文件并把 mtime 设成当前时间，
+    // 紧接着读 mtime 就得到「刚刚跑过」，首次运行反而被节流跳过。
+    $exists = is_file($lockFile);
+
+    $fp = @fopen($lockFile, 'c');
+    if ($fp === false) {
+        return;
+    }
+
+    // 非阻塞独占锁：已有其他请求在清理时直接放弃，避免并发重复执行
+    if (!@flock($fp, LOCK_EX | LOCK_NB)) {
+        @fclose($fp);
+        return;
+    }
+
+    try {
+        if (!$force && $exists) {
+            $last = (int) @filemtime($lockFile);
+            if ($last > 0 && time() - $last < 3600) {
+                return;
+            }
+        }
+        @touch($lockFile);
+        $done = true;
+
+        trash_gc();
+        log_gc();
+    } catch (Throwable) {
+        // 清理失败不能影响正常页面
+    } finally {
+        @flock($fp, LOCK_UN);
+        @fclose($fp);
+    }
+}
+
+/** 永久删除超过保留期的回收站条目 */
+function trash_gc(): void
+{
+    $days = (int) setting('recycle_days', 30);
+    if ($days <= 0) {
+        return;
+    }
+    $before = date('Y-m-d H:i:s', time() - $days * 86400);
+
+    $ids = array_column(
+        Db::all(
+            'SELECT `id` FROM ' . Db::t('files') . ' WHERE `deleted_at` IS NOT NULL AND `deleted_at` < ?',
+            [$before]
+        ),
+        'id'
+    );
+    if ($ids) {
+        AdminFileController::purge(['ids' => $ids]);
+    }
+
+    Db::exec(
+        'DELETE FROM ' . Db::t('folders') . ' WHERE `deleted_at` IS NOT NULL AND `deleted_at` < ?',
+        [$before]
+    );
+}
+
+/** 清理超过保留期的下载、登录与操作日志 */
+function log_gc(): void
+{
+    $days = (int) setting('log_keep_days', 30);
+    if ($days <= 0) {
+        return;
+    }
+    $before = date('Y-m-d H:i:s', time() - $days * 86400);
+
+    foreach (['downloads', 'login_logs', 'admin_logs'] as $t) {
+        try {
+            Db::exec('DELETE FROM ' . Db::t($t) . ' WHERE `created_at` < ?', [$before]);
+        } catch (Throwable) {
+        }
+    }
+}

@@ -256,6 +256,8 @@ class Auth
     {
         self::requireLogin();
         if (self::isAdmin()) {
+            // 后台任意页面都顺带跑一次过期清理（内部按小时节流）
+            housekeeping();
             return;
         }
         http_response_code(403);
