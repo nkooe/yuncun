@@ -2992,7 +2992,12 @@ img, svg { display: block; }
     display: table;
     table-layout: auto;
     width: 100%;
-    min-width: 720px;
+    /* 原来这里是 min-width: 720px，本意是让表格别被挤成卡片。
+       但 720px 的媒体查询已经把 .col-md 列隐藏了，剩下的列在 476px
+       的手机上完全放得下；继续强制 720px 反而让表格溢出容器被裁掉，
+       实测只能看到第一列（文件），用户与状态全部看不见。
+       改为不设下限，由内容与 100% 宽度共同决定。 */
+    min-width: 0;
   }
   .adm-table thead { display: table-header-group; }
   .adm-table tbody { display: table-row-group; }
@@ -3005,12 +3010,15 @@ img, svg { display: block; }
     margin: 0;
   }
 
+  /* 注意：这里不能把 td.col-md 列进来。
+     上面 720px 的媒体查询用 .adm-table .col-md { display: none } 隐藏次要列，
+     而这里的选择器优先级更高（多一个元素名），一旦写上 display: table-cell
+     就会把 td 重新显示出来，th 却仍是 none，表头与数据整体错位一格。
+     实测现象：表头是「文件 / 用户 / 状态」，数据却是「文件名 / 用户名 / IP」。 */
   .adm-table th,
-  .adm-table td,
-  .adm-table td[data-label],
-  .adm-table td[data-label]:not([data-label="用户"]),
-  .adm-table td.col-md,
-  .adm-table td.col-md[data-label] {
+  .adm-table td:not(.col-md),
+  .adm-table td[data-label]:not(.col-md),
+  .adm-table td[data-label]:not([data-label="用户"]):not(.col-md) {
     display: table-cell;
     width: auto;
     padding: 11px 10px;
@@ -3057,4 +3065,32 @@ img, svg { display: block; }
   /* 操作列图标不换行 */
   .adm-table td.ta-r { text-align: right; }
   .adm-table td.ta-r .icon-btn { display: inline-flex; }
+}
+
+/* --------------------------------------------------------------------------
+   后台 Tab：窄屏下不允许换行
+   原来没有 nowrap 与 flex-shrink:0，窄屏时 flex 会把每个 tab 压窄，
+   文字被迫竖排（「下载记录」变成「下载记 / 录」）。改为不收缩 + 不换行，
+   容器放不下时横向滚动。
+   -------------------------------------------------------------------------- */
+.adm-tab {
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 560px) {
+  .adm-tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0;
+  }
+  .adm-tabs::-webkit-scrollbar { display: none; }
+  .adm-tab { padding: 9px 12px; font-size: 13px; }
+
+  /* 清理工具条：窄屏下让 select 独占一行，两个按钮并排 */
+  .log-clean { gap: 8px; }
+  .log-clean select { flex: 1 1 100%; height: 34px; }
+  .log-clean .btn-sm { flex: 1 1 0; min-width: 0; padding: 0 10px; font-size: 13px; }
 }
