@@ -121,12 +121,35 @@ class AdminLevelController
             $this->respond(false, '默认等级不能删除，请先把其他等级设为默认');
         }
 
-        $users = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('users') . ' WHERE `level_id` = ?', [$id]);
-        $files = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('files') . ' WHERE `level_id` = ? AND `deleted_at` IS NULL', [$id]);
-        $folders = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('folders') . ' WHERE `level_id` = ? AND `deleted_at` IS NULL', [$id]);
+        // 四类引用都要查。原先只查了 level_id（下载门槛）与用户等级，
+        // 漏了 view_level_id（可见门槛）。漏掉的后果是：删除等级后，
+        // 把它设为「可见等级」的文件仍带着一个指向已不存在等级的 id，
+        // visibilityFilter 里的 EXISTS 永远为假，这些文件对全部非管理员
+        // 永久消失，而且界面上看不出原因。
+        $users       = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('users') . ' WHERE `level_id` = ?', [$id]);
+        $files       = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('files') . ' WHERE `level_id` = ? AND `deleted_at` IS NULL', [$id]);
+        $folders     = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('folders') . ' WHERE `level_id` = ? AND `deleted_at` IS NULL', [$id]);
+        $filesView   = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('files') . ' WHERE `view_level_id` = ? AND `deleted_at` IS NULL', [$id]);
+        $foldersView = (int) Db::val('SELECT COUNT(*) FROM ' . Db::t('folders') . ' WHERE `view_level_id` = ? AND `deleted_at` IS NULL', [$id]);
 
-        if ($users + $files + $folders > 0) {
-            $this->respond(false, "仍被使用中：{$users} 个用户、{$files} 个文件、{$folders} 个文件夹，请先解除关联");
+        if ($users + $files + $folders + $filesView + $foldersView > 0) {
+            $parts = [];
+            if ($users > 0) {
+                $parts[] = "{$users} 个用户";
+            }
+            if ($files > 0) {
+                $parts[] = "{$files} 个文件设为可下载等级";
+            }
+            if ($folders > 0) {
+                $parts[] = "{$folders} 个文件夹设为可下载等级";
+            }
+            if ($filesView > 0) {
+                $parts[] = "{$filesView} 个文件设为可见等级";
+            }
+            if ($foldersView > 0) {
+                $parts[] = "{$foldersView} 个文件夹设为可见等级";
+            }
+            $this->respond(false, '仍被使用中：' . implode('、', $parts) . '，请先解除关联');
         }
 
         Db::exec('DELETE FROM ' . Db::t('levels') . ' WHERE `id` = ?', [$id]);

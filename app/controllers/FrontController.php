@@ -154,11 +154,20 @@ class FrontController
         if (!$isAdmin && (int) setting('hide_locked', 0) === 1) {
             $sort = user_level_sort($user);
             $lv = Db::t('levels');
-            $sql .= " AND ({$alias}.`view_level_id` = 0 OR EXISTS ("
-                . "SELECT 1 FROM {$lv} v WHERE v.`id` = {$alias}.`view_level_id` AND v.`sort` <= ?))";
+
+            // 等级已被删除的情况按「不限」处理，与 can_access_level() 的
+            // 「$need === null 时返回 true」保持一致。
+            // 不加这一条的话，历史上被删掉的等级会留下悬挂的 view_level_id，
+            // 那些文件的 EXISTS 判断恒为假，对全部非管理员永久不可见，
+            // 而且界面上完全看不出原因。
+            $sql .= " AND ({$alias}.`view_level_id` = 0"
+                . " OR NOT EXISTS (SELECT 1 FROM {$lv} g WHERE g.`id` = {$alias}.`view_level_id`)"
+                . " OR EXISTS (SELECT 1 FROM {$lv} v WHERE v.`id` = {$alias}.`view_level_id` AND v.`sort` <= ?))";
             $params[] = $sort;
-            $sql .= " AND ({$alias}.`level_id` = 0 OR EXISTS ("
-                . "SELECT 1 FROM {$lv} d WHERE d.`id` = {$alias}.`level_id` AND d.`sort` <= ?))";
+
+            $sql .= " AND ({$alias}.`level_id` = 0"
+                . " OR NOT EXISTS (SELECT 1 FROM {$lv} h WHERE h.`id` = {$alias}.`level_id`)"
+                . " OR EXISTS (SELECT 1 FROM {$lv} d WHERE d.`id` = {$alias}.`level_id` AND d.`sort` <= ?))";
             $params[] = $sort;
         }
 
