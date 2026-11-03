@@ -10,7 +10,7 @@ error_reporting(E_ALL);
 session_start();
 
 define('INST_ROOT', __DIR__);
-define('INST_VERSION', '1.1.20');
+define('INST_VERSION', '1.1.21');
 
 require_once __DIR__ . '/app/Schema.php';
 

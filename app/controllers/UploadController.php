@@ -22,13 +22,21 @@ class UploadController
     public function init(): void
     {
         // 文件名字段来自浏览器，部分客户端会带完整路径（如 ../../../x.txt）。
-        // 物理存储用 sha256 定位，不受路径影响，但名字会进数据库、
+        // 物理存储用 sha256 定位，不受路径校验影响，但名字会进数据库、
         // 列表展示和 Content-Disposition，残留 ../ 会导致显示异常，
-        // 某些下载工具也可能据此写到预期之外的目录。此处统一剥掉路径。
+        // 某些下载工具也可能据此写到预期之外的目录。
+        //
+        // 这里用「替换」而不是 basename：basename 会把 <script>a</script>.txt
+        // 里的 / 当路径分隔符截断成 script>.txt，破坏用户的原始文件名。
         $name = (string) post('name');
-        $name = basename(str_replace('\\', '/', $name));
+        $name = str_replace(['/', '\\'], '_', $name);   // 路径分隔符降级为下划线
         $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name);
+        $name = preg_replace('/\.{2,}/', '.', $name);            // 连续点压缩，消除 ../
         $name = trim($name);
+        $name = ltrim($name, '.');                        // 避免生成隐藏文件名
+        if ($name === '') {
+            $name = 'unnamed';
+        }
 
         $size     = (int) post('size');
         $chunks   = (int) post('chunks');
