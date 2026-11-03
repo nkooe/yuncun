@@ -21,7 +21,15 @@ class UploadController
 
     public function init(): void
     {
-        $name     = post('name');
+        // 文件名字段来自浏览器，部分客户端会带完整路径（如 ../../../x.txt）。
+        // 物理存储用 sha256 定位，不受路径影响，但名字会进数据库、
+        // 列表展示和 Content-Disposition，残留 ../ 会导致显示异常，
+        // 某些下载工具也可能据此写到预期之外的目录。此处统一剥掉路径。
+        $name = (string) post('name');
+        $name = basename(str_replace('\\', '/', $name));
+        $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name);
+        $name = trim($name);
+
         $size     = (int) post('size');
         $chunks   = (int) post('chunks');
         $folderId = (int) post('folder_id');
