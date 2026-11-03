@@ -32,7 +32,7 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
 <meta name="format-detection" content="telephone=no">
 <title><?= e($pageTitle ?? setting('site_name', '云盘')) ?></title>
 <link rel="stylesheet" href="<?= asset('app.css') ?>">
-<link rel="icon" href="<?= asset('favicon.svg') ?>" type="image/svg+xml">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(site_favicon_svg()) ?>">
 </head>
 <body class="page-front">
 <div class="frame">
@@ -45,7 +45,7 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
             <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         <?php else: ?>
-          <img class="logo-img logo-nav" src="<?= asset('logo.svg') ?>" alt="" width="30" height="30">
+          <?= site_logo_svg('logo-img logo-nav') ?>
         <?php endif; ?>
       </div>
       <h1 class="nav-title"><?= e($navTitle ?? setting('site_name', '云盘')) ?></h1>

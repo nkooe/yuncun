@@ -49,13 +49,13 @@ $icons = [
 <meta name="base-url" content="<?= e(base_path()) ?>">
 <title><?= e($pageTitle ?? '后台 · ' . setting('site_name', '云盘')) ?></title>
 <link rel="stylesheet" href="<?= asset('app.css') ?>">
-<link rel="icon" href="<?= asset('favicon.svg') ?>" type="image/svg+xml">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(site_favicon_svg()) ?>">
 </head>
 <body class="page-admin">
 
 <aside class="adm-side" id="admSide">
   <div class="adm-brand">
-    <img class="logo-img logo-adm" src="<?= asset('logo.svg') ?>" alt="" width="27" height="27">
+    <?= site_logo_svg('logo-img logo-adm') ?>
     <span class="adm-title"><?= e(setting('site_name', '云盘')) ?></span>
   </div>
   <nav class="adm-menu">

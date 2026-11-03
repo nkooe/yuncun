@@ -11,7 +11,7 @@
 <meta name="theme-color" content="<?= e(setting('theme_color', '#07C160')) ?>">
 <title><?= e($pageTitle ?? '登录 · ' . setting('site_name', '云盘')) ?></title>
 <link rel="stylesheet" href="<?= asset('app.css') ?>">
-<link rel="icon" href="<?= asset('favicon.svg') ?>" type="image/svg+xml">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,<?= base64_encode(site_favicon_svg()) ?>">
 </head>
 <body class="page-auth">
 <div class="auth-wrap">

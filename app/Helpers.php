@@ -523,6 +523,36 @@ function quota_consume(array $user): array
 }
 
 /**
+ * 站点图标（内联 SVG）。
+ *
+ * 仓库约定不带图片文件，所以 logo 与 favicon 不能作为 .svg 资源存在。
+ * 直接内联进 HTML，既不违反约定，也不额外产生请求。
+ */
+function site_favicon_svg(): string
+ {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">'
+        . '<rect width="48" height="48" rx="11" fill="#07C160"/>'
+        . '<path d="M14.8 32.2h18.4a5.9 5.9 0 0 0 .9-11.72A9 9 0 0 0 17 18.2a6.5 6.5 0 0 0-2.2 14z" fill="#fff"/>'
+        . '<path d="M24 20v8.2M20.7 25.1 24 28.4l3.3-3.3" stroke="#07C160" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>'
+        . '</svg>';
+ }
+
+/** 站点 logo（内联 SVG，尺寸由调用方通过 class 控制） */
+function site_logo_svg(string $class = 'logo-img'): string
+ {
+    static $n = 0;
+    $n++;
+    $gid = 'lgrad' . $n;   // 同页多次出现时保持 gradient id 唯一
+    return '<svg class="' . e($class) . '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="30" height="30" fill="none" aria-hidden="true">'
+        . '<defs><linearGradient id="' . $gid . '" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">'
+        . '<stop stop-color="#25DA7C"/><stop offset="1" stop-color="#06A855"/></linearGradient></defs>'
+        . '<rect width="48" height="48" rx="13" fill="url(#' . $gid . ')"/>'
+        . '<path d="M15.2 31.8h17.6a5.6 5.6 0 0 0 .9-11.13 8.6 8.6 0 0 0-16.3-2.2 6.2 6.2 0 0 0-2.2 12.03z" fill="#fff" fill-opacity=".96"/>'
+        . '<path d="M24 20.2v7.6" stroke="#07A855" stroke-width="2.3" stroke-linecap="round"/>'
+        . '<path d="M20.9 25.2 24 28.3l3.1-3.1" stroke="#07A855" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>'
+        . '</svg>';
+ }
+/**
  * 回收站与日志的定期清理。
  *
  * 原先这两件事各挂在对应页面上：只有打开 /admin/trash 才清回收站，
