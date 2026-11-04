@@ -17,7 +17,10 @@ class UploadController
      * 单分片目标大小。实际值取 min(它, PHP 上传上限 * 0.8)，
      * 所以 php.ini 放宽后分片会自动变大，无需改代码。
      */
-    private const CHUNK_TARGET = 33554432; // 32MB
+    // 分片大小。原来 32MB，实测切换页面时传到 2% 就断，整片白传——
+    // 因为分片是整体落盘的，传一半等于没传。降到 8MB 后中断最多损失 8MB，
+    // 代价是请求数变多（300MB 文件从 10 片变成 38 片），影响可接受。
+    private const CHUNK_TARGET = 8388608;
 
     public function init(): void
     {
@@ -283,6 +286,18 @@ class UploadController
             }
             $received = Storage::receivedChunks($id);
             $total = (int) ($meta['chunks'] ?? 0);
+
+            // 已经传成功过同名的同大小文件，说明这个任务是被用户重传取代的，
+            // 再提示续传只会让人困惑（列表里明明已经有了）。
+            $done = Db::val(
+                'SELECT 1 FROM ' . Db::t('files')
+                . ' WHERE `name` = ? AND `size` = ? AND `deleted_at` IS NULL LIMIT 1',
+                [(string) ($meta['name'] ?? ''), (int) ($meta['size'] ?? 0)]
+            );
+            if ($done !== null) {
+                Storage::cleanupUpload($id);   // 顺手把残留分片清掉
+                continue;
+            }
             $out[] = [
                 'upload_id'  => $id,
                 'name'       => (string) ($meta['name'] ?? ''),
@@ -297,7 +312,21 @@ class UploadController
 
         // 新的排前面
         usort($out, static fn($a, $b) => $b['created_at'] <=> $a['created_at']);
-        $this->ok(['items' => array_slice($out, 0, 20)]);
+
+        // 同一文件可能因为反复重传留下多条任务，只保留最新那条，
+        // 否则界面上会看到一串同名条目，用户不知道该点哪个。
+        $seen = [];
+        $uniq = [];
+        foreach ($out as $it) {
+            $key = $it['name'] . '|' . $it['size'];
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = 1;
+            $uniq[] = $it;
+        }
+
+        $this->ok(['items' => array_slice($uniq, 0, 20)]);
     }
 
     /**

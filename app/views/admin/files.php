@@ -64,9 +64,10 @@ $keyword = $keyword ?? '';
   <div class="upload-list" id="uploadList"></div>
 </div>
 
-<?php if (empty($files)): ?>
-  <div class="resume-box" id="resumeBox" hidden></div>
+<?php /* 未完成的上传：不放在 empty 分支里，列表有没有内容都要能续传 */ ?>
+<div class="resume-box" id="resumeBox" hidden></div>
 
+<?php if (empty($files)): ?>
   <div class="adm-panel">
     <div class="adm-empty">
       <p><?= $keyword !== '' ? '没有匹配的文件' : '还没有上传任何资源' ?></p>

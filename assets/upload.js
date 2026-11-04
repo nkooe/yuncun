@@ -113,7 +113,10 @@
     try { localStorage.setItem(LS_KEY, JSON.stringify(arr.slice(0, 20))); } catch (e) {}
   }
   function rememberUpload(uploadId, file) {
-    var arr = lsRead().filter(function (x) { return x.upload_id !== uploadId; });
+    // 同一文件反复重传会堆很多条，按 名字+大小 只留最新的一条
+    var arr = lsRead().filter(function (x) {
+      return x.upload_id !== uploadId && !(x.name === file.name && x.size === file.size);
+    });
     arr.unshift({
       upload_id: uploadId,
       name: file.name,
