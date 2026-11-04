@@ -3263,3 +3263,25 @@ input[type="radio"]:disabled {
   cursor: not-allowed;
   opacity: .5;
 }
+/* --------------------------------------------------------------------------
+   品牌区回首页
+   logo 与站名都指向 /，点击即回首页。原来只输出一个 <img>，点了没反应。
+   -------------------------------------------------------------------------- */
+.nav-home {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.nav-title a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 桌面端标题不居中，链接不该撑出额外宽度 */
+@media (min-width: 768px) {
+  .nav-title a { max-width: 100%; }
+}

@@ -45,10 +45,21 @@ $tabActive = static function (array $prefixes) use ($currentPath): string {
             <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </a>
         <?php else: ?>
-          <?= site_logo_svg('logo-img logo-nav') ?>
+          <?php /* 品牌区回首页：logo 与后面的站名都可点 */ ?>
+          <a class="nav-home" href="<?= url('/') ?>" aria-label="返回首页">
+            <?= site_logo_svg('logo-img logo-nav') ?>
+          </a>
         <?php endif; ?>
       </div>
-      <h1 class="nav-title"><?= e($navTitle ?? setting('site_name', '云盘')) ?></h1>
+      <h1 class="nav-title">
+        <?php /* 只有标题显示站名时才做链接。内页标题是「分类」「登录记录」
+                 或文件夹名，那些点回首页没有意义，保持纯文本。 */ ?>
+        <?php if (empty($navTitle)): ?>
+          <a href="<?= url('/') ?>"><?= e(setting('site_name', '云盘')) ?></a>
+        <?php else: ?>
+          <?= e($navTitle) ?>
+        <?php endif; ?>
+      </h1>
 
       <nav class="pc-nav">
         <a class="<?= $tabActive(['/']) ?>" href="<?= url('/') ?>">全部资源</a>
