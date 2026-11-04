@@ -39,13 +39,13 @@ $q = $keyword ?? '';
   </div>
   <div class="folder-scroll">
     <?php foreach ($folders as $fo): ?>
-      <button type="button" class="folder-card js-soon">
+      <a class="folder-card" href="<?= url('/folder/' . (int) $fo['id']) ?>">
         <span class="folder-ico">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3.5 7A1.5 1.5 0 015 5.5h4l1.8 2H19A1.5 1.5 0 0120.5 9v9.5A1.5 1.5 0 0119 20H5a1.5 1.5 0 01-1.5-1.5V7z"/></svg>
         </span>
         <b><?= e($fo['name']) ?></b>
         <small><?= (int) $fo['cnt'] ?> 个文件</small>
-      </button>
+      </a>
     <?php endforeach; ?>
   </div>
 </section>

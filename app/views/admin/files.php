@@ -305,3 +305,14 @@ $keyword = $keyword ?? '';
 </div>
 
 <script src="<?= asset('upload.js') ?>"></script>
+<script>
+/* 从仪表盘的「上传资源」跳过来时自动打开文件选择 */
+(function () {
+  var AUTO_OPEN_UPLOAD = /[?&]upload=1(&|$)/.test(location.search);
+  if (!AUTO_OPEN_UPLOAD) return;
+  var btn = document.getElementById('pickFiles');
+  if (btn) setTimeout(function () { btn.click(); }, 300);
+  // 用过就清掉参数，避免刷新反复弹窗
+  if (history.replaceState) history.replaceState(null, '', location.pathname);
+})();
+</script>

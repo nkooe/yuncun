@@ -3175,3 +3175,9 @@ img, svg { display: block; }
   .batch-move { margin-left: 0; width: 100%; }
   .batch-move .up-folder { flex: 1; min-width: 0; }
 }
+/* 分类卡片从 <button> 改成 <a> 后，重置链接的默认样式 */
+a.folder-card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}

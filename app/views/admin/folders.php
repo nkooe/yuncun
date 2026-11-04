@@ -177,3 +177,13 @@
 </div>
 
 <script src="<?= asset('folder.js') ?>"></script>
+<script>
+/* 从仪表盘的「新建文件夹」跳过来时自动打开弹窗 */
+(function () {
+  var AUTO_OPEN_NEW_FOLDER = /[?&]new=1(&|$)/.test(location.search);
+  if (!AUTO_OPEN_NEW_FOLDER) return;
+  var btn = document.getElementById('newFolder');
+  if (btn) setTimeout(function () { btn.click(); }, 300);
+  if (history.replaceState) history.replaceState(null, '', location.pathname);
+})();
+</script>

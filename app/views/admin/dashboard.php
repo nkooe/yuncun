@@ -37,7 +37,7 @@ $cards = [
     <?php if (empty($recentFiles)): ?>
       <div class="adm-empty">
         <p>还没有上传任何资源</p>
-        <button class="btn btn-primary btn-sm js-soon">上传资源</button>
+        <a class="btn btn-primary btn-sm" href="<?= url('/admin/files?upload=1') ?>">上传资源</a>
       </div>
     <?php else: ?>
       <div class="cell-group cell-group-tight">
@@ -86,8 +86,8 @@ $cards = [
 <section class="adm-panel">
   <header class="adm-panel-h"><h2>快速入口</h2></header>
   <div class="quick-grid">
-    <button class="quick js-soon"><span class="q-ico">↑</span><b>上传资源</b><small>支持拖拽批量</small></button>
-    <button class="quick js-soon"><span class="q-ico">＋</span><b>新建文件夹</b><small>组织资源结构</small></button>
+    <a class="quick" href="<?= url('/admin/files?upload=1') ?>"><span class="q-ico">↑</span><b>上传资源</b><small>支持拖拽批量</small></a>
+    <a class="quick" href="<?= url('/admin/folders?new=1') ?>"><span class="q-ico">＋</span><b>新建文件夹</b><small>组织资源结构</small></a>
     <a class="quick" href="<?= url('/admin/users') ?>"><span class="q-ico">人</span><b>用户管理</b><small>账号与配额</small></a>
     <a class="quick" href="<?= url('/admin/settings') ?>"><span class="q-ico">设</span><b>系统设置</b><small>下载开关与限制</small></a>
   </div>
