@@ -49,6 +49,8 @@ $icons = [
 <meta name="base-url" content="<?= e(base_path()) ?>">
 <title><?= e($pageTitle ?? '后台 · ' . setting('site_name', '云盘')) ?></title>
 <link rel="stylesheet" href="<?= asset('app.css') ?>">
+<?php /* 主题色覆盖：让后台设置的 theme_color 真正作用到配色 */ ?>
+<style><?= theme_css_vars() ?></style>
 <link rel="icon" type="image/png" href="<?= e(site_favicon_svg()) ?>">
 </head>
 <body class="page-admin">

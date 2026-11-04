@@ -528,6 +528,34 @@ function quota_consume(array $user): array
  * 仓库约定不带图片文件，所以 logo 与 favicon 不能作为 .svg 资源存在。
  * 直接内联进 HTML，既不违反约定，也不额外产生请求。
  */
+/**
+ * 把后台设置的主题色变成 CSS 变量。
+ *
+ * 原来 theme_color 只进了 <meta name="theme-color">，那是浏览器地址栏的颜色，
+ * 网页本身的配色写死在 app.css 的 :root 里，用户在后台改了没任何反应。
+ * 这里根据主色算出深色和浅色两个变体，注入覆盖。
+ */
+function theme_css_vars(): string
+{
+    $hex = (string) setting('theme_color', '#07C160');
+    if (!preg_match('/^#([0-9a-fA-F]{6})$/', $hex, $m)) {
+        $hex = '#07C160';
+        $m = [1 => '07C160'];
+    }
+
+    $ch = str_split($m[1], 2);
+    $r = hexdec($ch[0]); $g = hexdec($ch[1]); $b = hexdec($ch[2]);
+
+    // 深色：整体压暗 8%，用作按下态
+    $dk = static fn(int $c): int => max(0, min(255, (int) round($c * 0.92)));
+    // 浅色：往白色里混 92%，用作浅底
+    $lt = static fn(int $c): int => (int) round($c + (255 - $c) * 0.92);
+
+    $dark  = sprintf('#%02X%02X%02X', $dk($r), $dk($g), $dk($b));
+    $light = sprintf('#%02X%02X%02X', $lt($r), $lt($g), $lt($b));
+
+    return ':root{--green:' . $hex . ';--green-d:' . $dark . ';--green-l:' . $light . '}';
+}
 function site_favicon_svg(): string
 {
     // 站点图标：蓝色云朵 + 下载箭头，PNG 以 base64 内联。

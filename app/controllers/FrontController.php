@@ -45,7 +45,7 @@ class FrontController
             . 'FROM ' . Db::t('files') . ' f '
             . 'LEFT JOIN ' . Db::t('folders') . ' d ON d.`id` = f.`folder_id` '
             . 'WHERE ' . $where . ' '
-            . 'ORDER BY f.`created_at` DESC '
+            . 'ORDER BY ' . $this->fileOrder()
             . 'LIMIT ' . (int) $pager['per_page'] . ' OFFSET ' . (int) $pager['offset'],
             $visParams
         );
@@ -107,7 +107,7 @@ class FrontController
             . 'f.`level_id`, f.`view_level_id`, f.`login_required`, d.`name` AS folder_name '
             . 'FROM ' . Db::t('files') . ' f '
             . 'LEFT JOIN ' . Db::t('folders') . ' d ON d.`id` = f.`folder_id` '
-            . 'WHERE ' . $where . ' ORDER BY f.`created_at` DESC '
+            . 'WHERE ' . $where . ' ORDER BY ' . $this->fileOrder()
             . 'LIMIT ' . (int) $pager['per_page'] . ' OFFSET ' . (int) $pager['offset'],
             $params
         );
@@ -140,6 +140,21 @@ class FrontController
      *
      * @return array{0:string,1:array}
      */
+    /**
+     * 前台文件列表的排序。
+     *
+     * 后台「默认排序」这个设置项原来全站没人读——用户选了「下载最多」，
+     * 前台还是按上传时间排。这里接上，并对未知值回退到最新。
+     */
+    private function fileOrder(string $alias = 'f'): string
+    {
+        $s = (string) setting('sort_default', 'new');
+        return match ($s) {
+            'hot'   => "{$alias}.`downloads` DESC, {$alias}.`id` DESC ",
+            'name'  => "{$alias}.`name` ASC, {$alias}.`id` ASC ",
+            default => "{$alias}.`created_at` DESC ",
+        };
+    }
     private function visibilityFilter(string $alias = 'f'): array
     {
         $user = Auth::user();
@@ -292,7 +307,7 @@ class FrontController
             . 'f.`level_id`, f.`view_level_id`, f.`login_required`, d.`name` AS folder_name '
             . 'FROM ' . Db::t('files') . ' f '
             . 'LEFT JOIN ' . Db::t('folders') . ' d ON d.`id` = f.`folder_id` '
-            . 'WHERE ' . $where . ' ORDER BY f.`created_at` DESC '
+            . 'WHERE ' . $where . ' ORDER BY ' . $this->fileOrder()
             . 'LIMIT ' . (int) $pager['per_page'] . ' OFFSET ' . (int) $pager['offset'],
             array_merge([$folderId], $visParams2)
         );

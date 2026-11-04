@@ -99,15 +99,49 @@ class AdminController
                 $saved++;
             }
         }
+        // 每个键各自的上限。视图里 site_name 有 maxlength="32"、site_desc 是 120，
+        // 但那只是浏览器端的约束，直接 POST 能绕过——实测把 500 字塞进站点名，
+        // 会原样入库，前台的 <title> 和分享卡都会变得没法看。
+        $strLimits = [
+            'site_name'    => [32,  '云盘'],
+            'site_desc'    => [120,  '简洁、快速的资源分享'],
+            'site_url'     => [255,  ''],
+            'icp'          => [64,   ''],
+            'theme_color'  => [7,    '#07C160'],
+            'ext_blacklist'=> [512,  ''],
+        ];
+
         foreach ($strKeys as $k) {
-            if (array_key_exists($k, $_POST)) {
-                $v = trim((string) $_POST[$k]);
-                if ($k === 'default_quota_period' && !in_array($v, ['total', 'daily', 'monthly'], true)) {
-                    $v = 'total';
-                }
-                setting_set($k, mb_substr($v, 0, 512));
-                $saved++;
+            if (!array_key_exists($k, $_POST)) {
+                continue;
             }
+            $v = trim((string) $_POST[$k]);
+
+            if ($k === 'default_quota_period') {
+                setting_set($k, in_array($v, ['total', 'daily', 'monthly'], true) ? $v : 'total');
+                $saved++;
+                continue;
+            }
+            if ($k === 'sort_default') {
+                // 这个键原来完全没校验，脏值会落库；而前台也从不读它（见 FrontController）
+                setting_set($k, in_array($v, ['new', 'hot', 'name'], true) ? $v : 'new');
+                $saved++;
+                continue;
+            }
+
+            [$max, $fallback] = $strLimits[$k] ?? [512, ''];
+
+            if ($k === 'theme_color') {
+                // 只接受 6 位十六进制，否则前台的 :root 变量会变成非法值
+                if (!preg_match('/^#[0-9a-fA-F]{6}$/', $v)) {
+                    $v = $fallback;
+                }
+            } else {
+                $v = mb_substr($v, 0, $max);
+            }
+
+            setting_set($k, $v);
+            $saved++;
         }
 
         $this->audit('save_settings', 'settings', 0, "更新 {$saved} 项");
