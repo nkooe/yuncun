@@ -89,10 +89,15 @@
 
   if (!panel || !listEl || !zone || !fileInput) return;
 
-  var currentFolder = (function () {
+  // 上传目标：优先取「上传到」下拉，没有则退回筛选下拉的值。
+  // 之前只读筛选下拉，导致筛选「全部文件夹」时上传一律落到根目录，
+  // 想在子目录里上传只能先把筛选切过去。
+  function targetFolder() {
+    var up = document.getElementById('uploadFolder');
+    if (up) return parseInt(up.value, 10) || 0;
     var sel = document.querySelector('.adm-filter select[name="folder_id"]');
     return sel ? parseInt(sel.value, 10) || 0 : 0;
-  })();
+  }
 
   var pending = 0;
   var failed = 0;
@@ -160,7 +165,7 @@
     initFd.append('name', file.name);
     initFd.append('size', String(size));
     initFd.append('chunks', String(guessChunks));
-    initFd.append('folder_id', String(currentFolder));
+    initFd.append('folder_id', String(targetFolder()));
 
     var init = await api('/api/upload/init', initFd);
     if (typeof onInit === 'function') onInit(init);
@@ -374,7 +379,9 @@
 
   function syncBatchBtn() {
     if (!batchBtn) return;
-    batchBtn.disabled = selectedIds().length === 0;
+    var n = selectedIds().length;
+    if (batchBtn) batchBtn.disabled = n === 0;
+    if (moveBtn) moveBtn.disabled = n === 0;
   }
 
   if (checkAll) {
@@ -400,6 +407,50 @@
       var ids = selectedIds();
       if (!ids.length) return;
       openDelModal('batch', ids, '');
+    });
+  }
+
+  /* 批量移动到文件夹 */
+  var moveBtn = document.getElementById('batchMove');
+  var batchFolder = document.getElementById('batchFolder');
+
+  function syncBatchButtons() {
+    var n = selectedIds().length;
+    if (batchBtn) batchBtn.disabled = n === 0;
+    if (moveBtn) moveBtn.disabled = n === 0;
+  }
+
+  if (moveBtn && batchFolder) {
+    moveBtn.addEventListener('click', function () {
+      var ids = selectedIds();
+      if (!ids.length) return;
+      var fid = parseInt(batchFolder.value, 10) || 0;
+      var dest = batchFolder.options[batchFolder.selectedIndex].textContent.trim();
+
+      if (!confirm('把选中的 ' + ids.length + ' 个文件移动到「' + dest + '」？')) return;
+
+      moveBtn.disabled = true;
+      var fd = new FormData();
+      fd.append('_token', (document.querySelector('input[name="_token"]') || {}).value || '');
+      ids.forEach(function (id) { fd.append('ids[]', id); });
+      fd.append('folder_id', String(fid));
+
+      fetch('/admin/files/batch-move', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (window.wxToast) window.wxToast(res.msg, res.ok ? 'ok' : 'err');
+          if (res.ok) setTimeout(function () { location.reload(); }, 600);
+          else moveBtn.disabled = false;
+        })
+        .catch(function (e) {
+          if (window.wxToast) window.wxToast('移动失败：' + e.message, 'err');
+          moveBtn.disabled = false;
+        });
     });
   }
 

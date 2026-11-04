@@ -14,6 +14,16 @@ $keyword = $keyword ?? '';
   </button>
   <input type="file" id="fileInput" multiple hidden>
 
+  <?php /* 上传目标：与下方「筛选」解耦，这样筛选「全部文件夹」时也能指定落到哪个目录 */ ?>
+  <select id="uploadFolder" class="up-folder" title="上传到哪个文件夹">
+    <option value="0">上传到根目录</option>
+    <?php foreach ($tree as $fo): ?>
+      <option value="<?= (int) $fo['id'] ?>">
+        <?= str_repeat('　', (int) $fo['depth']) . e($fo['name']) ?>
+      </option>
+    <?php endforeach; ?>
+  </select>
+
   <form class="adm-filter" method="get" action="<?= url('/admin/files') ?>">
     <select name="folder_id" onchange="this.form.submit()">
       <option value="0">全部文件夹</option>
@@ -65,6 +75,17 @@ $keyword = $keyword ?? '';
     <div class="adm-table-bar">
       <label class="chk-label"><input type="checkbox" id="checkAll"> 全选</label>
       <button type="button" class="btn btn-danger-ghost btn-sm" id="batchDelete" disabled>移入回收站</button>
+      <span class="batch-move">
+        <select id="batchFolder" class="up-folder" title="移动到哪个文件夹">
+          <option value="0">移动到根目录</option>
+          <?php foreach ($tree as $fo): ?>
+            <option value="<?= (int) $fo['id'] ?>">
+              <?= str_repeat('　', (int) $fo['depth']) . e($fo['name']) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <button type="button" class="btn btn-ghost btn-sm" id="batchMove" disabled>移动</button>
+      </span>
     </div>
     <div class="table-wrap">
       <table class="adm-table">

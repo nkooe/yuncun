@@ -161,6 +161,49 @@ class AdminFileController
     }
 
     /** 批量移入回收站；hard=1 时永久删除 */
+    /**
+     * 批量移动到指定文件夹。folder_id = 0 表示移回根目录。
+     */
+    public function batchMove(): void
+    {
+        $raw = $_POST['ids'] ?? '';
+        $ids = is_array($raw) ? $raw : explode(',', (string) $raw);
+        $ids = array_values(array_filter(array_map('intval', $ids), static fn($v) => $v > 0));
+        $folderId = (int) post('folder_id', '0');
+
+        if (!$ids) {
+            $this->respond(false, '未选择文件');
+        }
+        $ids = array_slice($ids, 0, 200);
+
+        // 目标文件夹必须存在且未被删除
+        if ($folderId > 0) {
+            $rows = Db::all(
+                'SELECT `id` FROM ' . Db::t('folders') . ' WHERE `id` = ? AND `deleted_at` IS NULL',
+                [$folderId]
+            );
+            $ok = $rows ? (int) $rows[0]['id'] : 0;
+            if (!$ok) {
+                $this->respond(false, '目标文件夹不存在或已删除');
+            }
+        }
+
+        $in = implode(',', array_fill(0, count($ids), '?'));
+        $n = Db::exec(
+            'UPDATE ' . Db::t('files') . ' SET `folder_id` = ?, `updated_at` = ?'
+            . ' WHERE `id` IN (' . $in . ') AND `deleted_at` IS NULL',
+            array_merge([$folderId, now()], $ids)
+        );
+
+        $label = $folderId > 0 ? '文件夹' : '根目录';
+        admin_audit('batch_move_files', 'file', 0, '批量移动 ' . $n . ' 个到 ' . $label);
+
+        $this->respond(true, 
+            '已移动 ' . $n . ' 个到' . $label,
+            ['count' => $n]
+        );
+    }
+
     public function batchDelete(): void
     {
         $raw = $_POST['ids'] ?? '';

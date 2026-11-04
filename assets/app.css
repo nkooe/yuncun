@@ -3140,3 +3140,38 @@ img, svg { display: block; }
   }
   .adm-table .fbadge-sm { width: 26px; height: 26px; font-size: 9px; }
 }
+
+/* --------------------------------------------------------------------------
+   上传目标 / 批量移动的下拉
+   -------------------------------------------------------------------------- */
+.up-folder {
+  height: 32px;
+  max-width: 200px;
+  padding: 0 28px 0 10px;
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: #1D2129;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%2386909C' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 12px;
+}
+.up-folder:hover { border-color: #C9CDD4; }
+.up-folder:focus { outline: none; border-color: var(--green); }
+
+.batch-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (max-width: 560px) {
+  .adm-toolbar .up-folder { flex: 1 1 100%; max-width: none; }
+  .batch-move { margin-left: 0; width: 100%; }
+  .batch-move .up-folder { flex: 1; min-width: 0; }
+}

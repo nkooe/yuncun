@@ -65,6 +65,7 @@ $router->get('/admin/files', 'AdminFileController@index', ['requireAdmin']);
 $router->post('/admin/files/update', 'AdminFileController@update', ['requireAdmin']);
 $router->post('/admin/files/delete', 'AdminFileController@delete', ['requireAdmin']);
 $router->post('/admin/files/batch-delete', 'AdminFileController@batchDelete', ['requireAdmin']);
+$router->post('/admin/files/batch-move', 'AdminFileController@batchMove', ['requireAdmin']);
 
 // 文件夹
 $router->get('/admin/folders', 'AdminFolderController@index', ['requireAdmin']);
