@@ -10,7 +10,7 @@ define('APP_PATH', APP_ROOT . '/app');
 define('DATA_PATH', APP_ROOT . '/data');
 define('STORAGE_PATH', APP_ROOT . '/storage');
 define('RUNTIME_PATH', APP_ROOT . '/runtime');
-define('APP_VERSION', '1.1.47');
+define('APP_VERSION', '1.1.48');
 define('APP_NAME', '云盘');
 
 // 运行环境
@@ -75,6 +75,16 @@ if (session_status() === PHP_SESSION_NONE) {
     ]);
     session_name('WXPANSID');
     session_start();
+
+// 低频自动维护：过期分片 / 回收站 / 日志，每小时最多跑一次。
+// 这几项原本都有函数实现，但从来没有被调用过，垃圾只增不减。
+if (APP_INSTALLED && PHP_SAPI !== 'cli' && class_exists('Maintain')) {
+    try {
+        Maintain::tick();
+    } catch (Throwable) {
+        // 维护失败不能影响正常请求
+    }
+}
 }
 
 // 载入配置并定义运行时设置

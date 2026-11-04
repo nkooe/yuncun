@@ -101,6 +101,16 @@ $router->post('/admin/shares/create', 'AdminShareController@create', ['requireAd
 $router->post('/admin/shares/revoke', 'AdminShareController@revoke', ['requireAdmin']);
 
 // 设置
+
+// ---- 维护 ----
+$router->get('/admin/maintain', 'AdminMaintainController@index', ['requireAdmin']);
+$router->post('/admin/maintain/chunks', 'AdminMaintainController@chunks', ['requireAdmin']);
+$router->post('/admin/maintain/orphans', 'AdminMaintainController@orphans', ['requireAdmin']);
+$router->post('/admin/maintain/trash', 'AdminMaintainController@trash', ['requireAdmin']);
+$router->post('/admin/maintain/logs', 'AdminMaintainController@logs', ['requireAdmin']);
+$router->post('/admin/maintain/downloads', 'AdminMaintainController@downloads', ['requireAdmin']);
+$router->post('/admin/maintain/all', 'AdminMaintainController@all', ['requireAdmin']);
+
 $router->get('/admin/settings', 'AdminController@settings', ['requireAdmin']);
 $router->post('/admin/settings', 'AdminController@saveSettings', ['requireAdmin']);
 

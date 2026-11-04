@@ -25,6 +25,7 @@ $navGroups = [
     ]],
     ['title' => '系统', 'items' => [
         ['key' => 'settings', 'label' => '系统设置', 'href' => '/admin/settings', 'icon' => 'gear'],
+    ['key' => 'maintain', 'label' => '维护',     'href' => '/admin/maintain', 'icon' => 'broom'],
     ]],
 ];
 $icons = [
@@ -37,6 +38,7 @@ $icons = [
     'gear'   => '<circle cx="12" cy="12" r="3"/><path d="M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6L18 18M18 6l-1.4 1.4M7.4 16.6L6 18"/>',
     'level'  => '<path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8z"/>',
     'share'  => '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/>',
+  'broom'  => '<path d="M9 14l7-7"/><path d="M4.8 20.2c1-2.6 2.4-4.4 4.2-5.2"/><path d="M14.5 5.5l4 4"/><path d="M9.6 9.4l5 5"/>',
 ];
 ?>
 <!doctype html>
