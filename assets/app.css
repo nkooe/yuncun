@@ -3240,3 +3240,26 @@ a.folder-card {
   .resume-item { flex-wrap: wrap; }
   .resume-main { flex: 1 1 100%; }
 }
+/* --------------------------------------------------------------------------
+   复选框与单选框：恢复原生外观
+   上面有一段全局重置把所有 input 的 appearance 设成 none，本意是去掉
+   输入框的默认边框，但连带把 checkbox / radio 的原生控件也抹掉了——
+   15x15 的方块还在，里面什么都没有，看起来像「勾选框不见了」。
+   accent-color 只有在 appearance: auto 时才起作用。
+   .switch-row 里的开关是 opacity: 0 自己画的，不受影响。
+   -------------------------------------------------------------------------- */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: 15px;
+  height: 15px;
+  accent-color: var(--green);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
