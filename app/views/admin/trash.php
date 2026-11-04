@@ -45,7 +45,7 @@
         <table class="adm-table">
           <thead>
             <tr>
-              <th style="width:38px"></th>
+              <th class="col-chk"></th>
               <th>文件名</th>
               <th class="col-md" style="width:96px">大小</th>
               <th class="col-md" style="width:130px">原文件夹</th>
@@ -56,7 +56,7 @@
           <tbody>
             <?php foreach ($files as $f): [$badge, $color] = file_badge((string) $f['ext']); ?>
               <tr data-id="<?= (int) $f['id'] ?>">
-                <td><input type="checkbox" class="row-chk" value="<?= (int) $f['id'] ?>"></td>
+                <td class="col-chk"><input type="checkbox" class="row-chk" value="<?= (int) $f['id'] ?>"></td>
                 <td>
                   <div class="fcell">
                     <span class="fbadge fbadge-sm" style="--c:<?= e($color) ?>"><?= e($badge) ?></span>

@@ -97,7 +97,7 @@ $keyword = $keyword ?? '';
       <table class="adm-table">
         <thead>
           <tr>
-            <th style="width:38px"></th>
+            <th class="col-chk"></th>
             <th>文件名</th>
             <th class="col-md" style="width:96px">大小</th>
             <th class="col-md" style="width:128px">文件夹</th>
@@ -110,7 +110,7 @@ $keyword = $keyword ?? '';
         <tbody>
           <?php foreach ($files as $f): [$badge, $color] = file_badge((string) $f['ext']); ?>
             <tr data-id="<?= (int) $f['id'] ?>">
-              <td><input type="checkbox" name="ids[]" value="<?= (int) $f['id'] ?>" class="row-chk"></td>
+              <td class="col-chk"><input type="checkbox" name="ids[]" value="<?= (int) $f['id'] ?>" class="row-chk"></td>
               <td>
                 <div class="fcell">
                   <span class="fbadge fbadge-sm" style="--c:<?= e($color) ?>"><?= e($badge) ?></span>

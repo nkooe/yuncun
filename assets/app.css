@@ -3285,3 +3285,26 @@ input[type="radio"]:disabled {
 @media (min-width: 768px) {
   .nav-title a { max-width: 100%; }
 }
+/* --------------------------------------------------------------------------
+   复选框列对齐
+   原来是 td padding-left 12px + 浏览器给 checkbox 的默认 4px margin，
+   位置落在 x=271；工具栏的「全选」是 16px + 4px，落在 275，差 4px。
+   同时列宽 38px 里左边 16px、右边 7px 空白，左右不对称。
+
+   处理：checkbox 的默认 margin 归零，列宽改 47px（16 + 15 + 16），
+   左右内边距都 16px，与工具栏的 16px 对齐。
+   -------------------------------------------------------------------------- */
+input[type="checkbox"],
+input[type="radio"] {
+  margin: 0;
+}
+
+/* 复选框列：16 + 15 + 16 = 47，左右留白相等，且与工具条 padding-left:16px 对齐。
+   只作用于标了 .col-chk 的单元格——后台还有用户、日志、等级、分享等表格，
+   它们首列是数据，用 td:first-child 会把那些列一起压成 47px。 */
+.adm-table .col-chk {
+  width: 47px;
+  min-width: 47px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
