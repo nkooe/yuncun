@@ -99,6 +99,34 @@
     return sel ? parseInt(sel.value, 10) || 0 : 0;
   }
 
+  /* ---------------- 上传任务的本地记录 ---------------- */
+  // 上传是纯前端 XHR，页面一离开就断，进度只活在内存里。
+  // 这里把 upload_id 和文件指纹存到 localStorage，回到页面时
+  // 就能查服务端还剩哪些分片没传，让用户接着传。
+  var LS_KEY = 'wxpan_uploads';
+
+  function lsRead() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]') || []; }
+    catch (e) { return []; }
+  }
+  function lsWrite(arr) {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(arr.slice(0, 20))); } catch (e) {}
+  }
+  function rememberUpload(uploadId, file) {
+    var arr = lsRead().filter(function (x) { return x.upload_id !== uploadId; });
+    arr.unshift({
+      upload_id: uploadId,
+      name: file.name,
+      size: file.size,
+      folder_id: targetFolder(),
+      at: Date.now()
+    });
+    lsWrite(arr);
+  }
+  function forgetUpload(uploadId) {
+    lsWrite(lsRead().filter(function (x) { return x.upload_id !== uploadId; }));
+  }
+
   var pending = 0;
   var failed = 0;
   var cancelledCount = 0;
@@ -139,13 +167,13 @@
     row.querySelector('.up-pct').textContent = pct + '%';
   }
 
-  async function uploadOne(file, row) {
+  async function uploadOne(file, row, resume) {
     var init = null;
     try {
-      return await uploadOneInner(file, row, function (v) { init = v; });
+      return await uploadOneInner(file, row, function (v) { init = v; }, resume);
     } catch (e) {
       // 取消了就把服务端临时分片收掉，否则要等 24 小时的 GC 才清
-      if (init && init.upload_id && row.dataset.abort === '1') {
+      if (!resume && init && init.upload_id && row.dataset.abort === '1') {
         var abFd = new FormData();
         abFd.append('upload_id', init.upload_id);
         api('/api/upload/abort', abFd).catch(function () {});
@@ -154,21 +182,29 @@
     }
   }
 
-  async function uploadOneInner(file, row, onInit) {
+  async function uploadOneInner(file, row, onInit, resume) {
     var size = file.size;
     var guessChunk = 2 * 1024 * 1024;
     var guessChunks = Math.max(1, Math.ceil(size / guessChunk));
 
-    row.querySelector('.up-pct').textContent = '准备中';
+    row.querySelector('.up-pct').textContent = resume ? '续传中' : '准备中';
 
-    var initFd = new FormData();
-    initFd.append('name', file.name);
-    initFd.append('size', String(size));
-    initFd.append('chunks', String(guessChunks));
-    initFd.append('folder_id', String(targetFolder()));
-
-    var init = await api('/api/upload/init', initFd);
+    var init;
+    if (resume) {
+      // 续传：沿用服务端已有的 upload_id，不新建任务目录
+      init = { upload_id: resume.upload_id, chunk_size: resume.chunk_size, chunks: resume.chunks };
+    } else {
+      var initFd = new FormData();
+      initFd.append('name', file.name);
+      initFd.append('size', String(size));
+      initFd.append('chunks', String(guessChunks));
+      initFd.append('folder_id', String(targetFolder()));
+      init = await api('/api/upload/init', initFd);
+    }
     if (typeof onInit === 'function') onInit(init);
+
+    if (!resume) rememberUpload(init.upload_id, file);
+    row._uploadId = init.upload_id;
 
     var chunkSize = init.chunk_size;
     var total = init.chunks;
@@ -189,6 +225,14 @@
     // 每个分片各自的完成度 0–1，聚合后按字节加权得到总进度
     var parts = new Array(total).fill(0);
 
+    // 续传：服务端已有的分片直接算 100%，worker 也会跳过
+    var haveSet = {};
+    if (resume && resume.received && resume.received.length) {
+      resume.received.forEach(function (idx) {
+        if (idx >= 0 && idx < total) { parts[idx] = 1; haveSet[idx] = 1; }
+      });
+    }
+
     // 进行中的请求：取消时要真的掐断，否则已经在传的分片会一直跑完。
     // 32MB 分片要传二十多秒，3 个 worker 并行时点取消等于什么都没做。
     var inflight = [];
@@ -207,11 +251,17 @@
       setProgress(row, sizeSum > 0 ? done / sizeSum : 0);
     }
 
+    refresh();   // 续传时先按已传分片刷一次，避免从 0% 慢慢爬
+
     async function worker() {
       while (cursor < total) {
         if (row.dataset.abort === '1') throw new Error('已取消');
 
         var i = cursor++;
+
+        // 续传时这些分片服务端已经有了，直接跳过
+        if (haveSet[i]) { refresh(); continue; }
+
         var start = i * chunkSize;
         var end = Math.min(size, start + chunkSize);
         var blob = file.slice(start, end);
@@ -290,6 +340,7 @@
             row.querySelector('.up-pct').textContent = res.deduped ? '秒传' : '完成';
             row.querySelector('.up-size').textContent = fmtSize(res.size);
             if (res.deduped) row.classList.add('is-dedup');
+            if (row._uploadId) forgetUpload(row._uploadId);
           })
           .catch(function (err) {
             var cancelled = /已取消/.test(err.message || '');
@@ -333,6 +384,131 @@
     handleFiles(fileInput.files);
     fileInput.value = '';
   });
+
+  /* ---------------- 未完成的上传 ---------------- */
+  // 页面加载时问服务端还剩哪些任务，配合本地记录展示。
+  // 用户点「继续」需要重选同一个文件——浏览器不允许脚本重建 File 对象，
+  // 所以这里校验文件名与大小，一致才允许接上，避免传错数据。
+  var resumeBox = document.getElementById('resumeBox');
+  var resumeFile = document.getElementById('resumeInput');
+  var resumeTarget = null;
+
+  function renderPending(items) {
+    if (!resumeBox) return;
+    if (!items || !items.length) { resumeBox.hidden = true; return; }
+
+    resumeBox.innerHTML = '<div class="resume-title">有 ' + items.length + ' 个未完成的上传</div>' +
+      items.map(function (it) {
+        var pct = it.chunks > 0 ? Math.round(it.received / it.chunks * 100) : 0;
+        var full = pct >= 100;
+        return '<div class="resume-item" data-id="' + it.upload_id + '"' +
+          ' data-name="' + encodeURIComponent(it.name) + '"' +
+          ' data-size="' + it.size + '"' +
+          ' data-chunks="' + it.chunks + '">' +
+          '<div class="resume-main"><b>' + escapeHtml(it.name) + '</b>' +
+          '<small>' + fmtSize(it.size) + ' · ' + it.received + '/' + it.chunks + ' 片 (' + pct + '%)' +
+          (full ? '，只差合并' : '') + '</small></div>' +
+          '<button type="button" class="btn btn-primary btn-sm js-resume">' +
+          (full ? '完成上传' : '继续上传') + '</button>' +
+          '<button type="button" class="resume-x" title="丢弃这个任务">&times;</button>' +
+          '</div>';
+      }).join('');
+    resumeBox.hidden = false;
+  }
+
+  function escapeHtml(t) {
+    return String(t).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function loadPending() {
+    api('/api/upload/pending').then(function (res) {
+      if (!res || !res.ok) return;
+      var local = lsRead();
+      // 只展示本地记录里还有的任务，避免列出别处传了一半又放弃的垃圾
+      var byId = {};
+      local.forEach(function (x) { byId[x.upload_id] = 1; });
+      var items = (res.items || []).filter(function (it) { return byId[it.upload_id]; });
+      renderPending(items);
+    }).catch(function () {});
+  }
+
+  if (resumeBox) {
+    resumeBox.addEventListener('click', function (e) {
+      var item = e.target.closest ? e.target.closest('.resume-item') : null;
+      if (!item) return;
+      var id = item.dataset.id;
+
+      // 丢弃
+      if (e.target.closest('.resume-x')) {
+        forgetUpload(id);
+        var fd = new FormData();
+        fd.append('upload_id', id);
+        api('/api/upload/abort', fd).catch(function () {});
+        item.remove();
+        if (!resumeBox.querySelector('.resume-item')) resumeBox.hidden = true;
+        return;
+      }
+
+      // 继续 / 完成
+      if (e.target.closest('.js-resume')) {
+        resumeTarget = {
+          upload_id: id,
+          name: decodeURIComponent(item.dataset.name),
+          size: parseInt(item.dataset.size, 10),
+          chunks: parseInt(item.dataset.chunks, 10)
+        };
+        if (resumeFile) resumeFile.click();
+      }
+    });
+  }
+
+  if (resumeFile) {
+    resumeFile.addEventListener('change', function () {
+      var f = resumeFile.files && resumeFile.files[0];
+      resumeFile.value = '';
+      if (!f || !resumeTarget) return;
+
+      // 必须是同一个文件：名字与大小都得对上，否则分片拼出来是坏的
+      if (f.name !== resumeTarget.name || f.size !== resumeTarget.size) {
+        if (window.wxToast) window.wxToast('文件不匹配：需要「' + resumeTarget.name + '」(' + fmtSize(resumeTarget.size) + ')', 'err');
+        return;
+      }
+
+      var target = resumeTarget;
+      resumeTarget = null;
+
+      panel.hidden = false;
+      var row = createRow(f);
+      listEl.appendChild(row);
+      pending++;
+
+      api('/api/upload/resume', (function () { var d = new FormData(); d.append('upload_id', target.upload_id); return d; })())
+        .then(function (info) {
+          if (!info || !info.ok) throw new Error((info && info.msg) || '任务已失效');
+          row._uploadId = info.upload_id;
+          return uploadOne(f, row, info);
+        })
+        .then(function (res) {
+          row.dataset.done = '1';
+          row.classList.add('is-ok');
+          row.querySelector('.up-bar i').style.width = '100%';
+          row.querySelector('.up-pct').textContent = res.deduped ? '秒传' : '完成';
+          row.querySelector('.up-size').textContent = fmtSize(res.size);
+          forgetUpload(target.upload_id);
+          loadPending();
+        })
+        .catch(function (err) {
+          row.dataset.done = '0';
+          row.classList.add('is-err');
+          row.querySelector('.up-pct').textContent = '失败';
+          if (window.wxToast) window.wxToast('续传失败：' + err.message, 'err');
+        });
+    });
+  }
+
+  loadPending();
 
   /* 拖拽 */
   ['dragenter', 'dragover'].forEach(function (ev) {

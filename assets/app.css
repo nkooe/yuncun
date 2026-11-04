@@ -3181,3 +3181,62 @@ a.folder-card {
   text-decoration: none;
   cursor: pointer;
 }
+/* --------------------------------------------------------------------------
+   未完成的上传
+   上传是纯前端 XHR，切走页面就断了。回到页面时把服务端还剩的任务列出来，
+   用户重选同一个文件就能接着传，不用从头再来。
+   -------------------------------------------------------------------------- */
+.resume-box {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #FFE0B2;
+  border-radius: 10px;
+  background: #FFFBF3;
+}
+.resume-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #B26A00;
+  margin-bottom: 10px;
+}
+.resume-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #FFEBD0;
+}
+.resume-item:first-of-type { border-top: 0; }
+.resume-main { flex: 1; min-width: 0; }
+.resume-main b {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1D2129;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.resume-main small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: #86909C;
+}
+.resume-x {
+  flex: 0 0 auto;
+  width: 24px; height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #86909C;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.resume-x:hover { background: #FFEBD0; color: #E67E22; }
+
+@media (max-width: 560px) {
+  .resume-item { flex-wrap: wrap; }
+  .resume-main { flex: 1 1 100%; }
+}

@@ -14,6 +14,9 @@ $keyword = $keyword ?? '';
   </button>
   <input type="file" id="fileInput" multiple hidden>
 
+  <?php /* 未完成的上传：页面切走后回来还能接着传，需要重选同一个文件 */ ?>
+  <input type="file" id="resumeInput" hidden>
+
   <?php /* 上传目标：与下方「筛选」解耦，这样筛选「全部文件夹」时也能指定落到哪个目录 */ ?>
   <select id="uploadFolder" class="up-folder" title="上传到哪个文件夹">
     <option value="0">上传到根目录</option>
@@ -62,6 +65,8 @@ $keyword = $keyword ?? '';
 </div>
 
 <?php if (empty($files)): ?>
+  <div class="resume-box" id="resumeBox" hidden></div>
+
   <div class="adm-panel">
     <div class="adm-empty">
       <p><?= $keyword !== '' ? '没有匹配的文件' : '还没有上传任何资源' ?></p>

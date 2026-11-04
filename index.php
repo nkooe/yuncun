@@ -56,6 +56,8 @@ $router->post('/api/upload/init', 'UploadController@init', ['requireAdmin']);
 $router->post('/api/upload/chunk', 'UploadController@chunk', ['requireAdmin']);
 $router->post('/api/upload/finish', 'UploadController@finish', ['requireAdmin']);
 $router->post('/api/upload/abort', 'UploadController@abort', ['requireAdmin']);
+$router->get('/api/upload/pending', 'UploadController@pending', ['requireAdmin']);
+$router->post('/api/upload/resume', 'UploadController@resume', ['requireAdmin']);
 
 // ---- 后台 ----
 $router->get('/admin', 'AdminController@dashboard', ['requireAdmin']);

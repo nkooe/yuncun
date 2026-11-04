@@ -252,6 +252,86 @@ class UploadController
         ]);
     }
 
+    /**
+     * 列出当前用户尚未完成的上传任务。
+     *
+     * 上传走的是纯前端 XHR，离开页面就断了，进度只存在于内存里。
+     * 这里让前端能在回到页面时把未完成的任务捞回来，配合 resume
+     * 跳过已上传的分片，不用从头再传一遍。
+     */
+    public function pending(): void
+    {
+        $uid = Auth::id();
+        $root = Storage::chunksRoot();
+        $out = [];
+
+        if (!is_dir($root)) {
+            $this->ok(['items' => []]);
+        }
+
+        foreach (scandir($root) ?: [] as $id) {
+            if ($id === '.' || $id === '..' || !Storage::isValidUploadId($id)) {
+                continue;
+            }
+            $meta = Storage::readMeta($id);
+            if ($meta === null) {
+                continue;
+            }
+            // 只看自己的任务
+            if ((int) ($meta['user_id'] ?? 0) !== $uid) {
+                continue;
+            }
+            $received = Storage::receivedChunks($id);
+            $total = (int) ($meta['chunks'] ?? 0);
+            $out[] = [
+                'upload_id'  => $id,
+                'name'       => (string) ($meta['name'] ?? ''),
+                'size'       => (int) ($meta['size'] ?? 0),
+                'chunks'     => $total,
+                'received'   => count($received),
+                'folder_id'  => (int) ($meta['folder_id'] ?? 0),
+                'created_at' => (int) ($meta['created_at'] ?? 0),
+                'complete'   => $total > 0 && count($received) >= $total,
+            ];
+        }
+
+        // 新的排前面
+        usort($out, static fn($a, $b) => $b['created_at'] <=> $a['created_at']);
+        $this->ok(['items' => array_slice($out, 0, 20)]);
+    }
+
+    /**
+     * 查询某个上传任务的续传信息：已传了哪些分片。
+     */
+    public function resume(): void
+    {
+        $uploadId = (string) post('upload_id');
+        if (!Storage::isValidUploadId($uploadId)) {
+            $this->fail('上传任务无效', 400);
+        }
+        $meta = Storage::readMeta($uploadId);
+        if ($meta === null) {
+            $this->fail('上传任务不存在或已过期', 410);
+        }
+        if ((int) ($meta['user_id'] ?? 0) !== Auth::id()) {
+            $this->fail('无权操作该上传任务', 403);
+        }
+
+        $received = Storage::receivedChunks($uploadId);
+        $total = (int) ($meta['chunks'] ?? 0);
+
+        $this->ok([
+            'upload_id'  => $uploadId,
+            'name'       => (string) ($meta['name'] ?? ''),
+            'size'       => (int) ($meta['size'] ?? 0),
+            'chunks'     => $total,
+            'chunk_size' => (int) ($meta['chunk_size'] ?? 0),
+            'received'   => $received,
+            'folder_id'  => (int) ($meta['folder_id'] ?? 0),
+            'complete'   => $total > 0 && count($received) >= $total,
+        ]);
+    }
+
     public function abort(): void
     {
         $uploadId = post('upload_id');
