@@ -924,7 +924,8 @@ img, svg { display: block; }
 }
 .adm-filter select,
 .adm-filter input[type="search"] {
-  height: 34px; padding: 0 11px;
+  /* 与同排的 .btn-sm（36px）齐平：原来是 34px，一排控件高低不一会显得歪 */
+  height: 36px; padding: 0 11px;
   border: 1px solid #E5E6EB;
   border-radius: 6px;
   background: #fff;
@@ -1736,11 +1737,12 @@ img, svg { display: block; }
   flex-wrap: wrap;
 }
 .log-clean select {
-  height: 30px;
-  padding: 0 8px;
+  /* 旁边两个是 .btn-sm（36px），这里原本 30px，一排里明显矮一截 */
+  height: 36px;
+  padding: 0 11px;
   border: 1px solid #E5E6EB;
   border-radius: 6px;
-  font-size: 12.5px;
+  font-size: 14px;
   background: #fff;
 }
 
@@ -3145,9 +3147,10 @@ img, svg { display: block; }
    上传目标 / 批量移动的下拉
    -------------------------------------------------------------------------- */
 .up-folder {
-  height: 32px;
+  /* 与工具条里的 .btn-sm 统一 36px */
+  height: 36px;
   max-width: 200px;
-  padding: 0 28px 0 10px;
+  padding: 0 28px 0 11px;
   border: 1px solid #E5E6EB;
   border-radius: 8px;
   background: #fff;
